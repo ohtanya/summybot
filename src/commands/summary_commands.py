@@ -63,31 +63,34 @@ class SummaryCommands(commands.Cog):
             
             # Create embed
             embed = discord.Embed(
-                title=f"📊 Private Summary for {channel.name}",
-                description=summary,
+                title=f"📊 Private Summary for #{channel.name}",
                 color=discord.Color.blue(),
                 timestamp=datetime.utcnow()
             )
             
+            # Add summary as main description with better formatting
+            formatted_summary = f"**Channel Activity:**\n{summary}\n"
+            embed.description = formatted_summary
+            
             embed.add_field(
-                name="Server",
+                name="📍 Server",
                 value=interaction.guild.name,
                 inline=True
             )
             
             embed.add_field(
-                name="Timeframe",
+                name="⏰ Timeframe", 
                 value=f"Last {hours} hours",
                 inline=True
             )
             
             embed.add_field(
-                name="Messages Analyzed",
-                value=str(len(messages)),
+                name="📈 Messages Analyzed",
+                value=f"{len(messages)} messages",
                 inline=True
             )
             
-            embed.set_footer(text=f"Private summary for {interaction.user.display_name}")
+            embed.set_footer(text=f"Private summary requested by {interaction.user.display_name}")
             
             # Send to user's DMs
             try:
