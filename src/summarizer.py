@@ -193,21 +193,32 @@ class ConversationSummarizer:
     
     async def _generate_summary(self, text: str) -> Optional[str]:
         """Generate summary using available method"""
+        print(f"DEBUG: Generating summary for text length: {len(text)}")
+        
         # Try OpenAI first if available
         if self.openai_client:
             try:
-                return await self._summarize_with_openai(text)
+                print("DEBUG: Attempting OpenAI summarization")
+                result = await self._summarize_with_openai(text)
+                print(f"DEBUG: OpenAI summary successful: {len(result)} characters")
+                return result
             except Exception as e:
+                print(f"DEBUG: OpenAI summarization failed: {e}")
                 logger.warning(f"OpenAI summarization failed: {e}")
         
         # Fallback to local summarizer
         if self.local_summarizer:
             try:
-                return await self._summarize_with_transformers(text)
+                print("DEBUG: Attempting local transformer summarization")
+                result = await self._summarize_with_transformers(text)
+                print(f"DEBUG: Local transformer summary successful: {len(result)} characters")
+                return result
             except Exception as e:
+                print(f"DEBUG: Local transformer summarization failed: {e}")
                 logger.warning(f"Local summarization failed: {e}")
         
         # Last resort: simple extractive summary
+        print("DEBUG: Using fallback extractive summary")
         return self._simple_extractive_summary(text)
     
     async def _summarize_with_openai(self, text: str) -> str:
@@ -259,18 +270,40 @@ class ConversationSummarizer:
         """Simple extractive summary as last resort"""
         lines = text.split('\n')
         
-        # Take first few and last few lines
         if len(lines) <= 5:
             return "Brief conversation with limited content."
         
-        summary_lines = []
-        summary_lines.extend(lines[:2])  # First 2 lines
+        # Count participants
+        participants = set()
+        topics = set()
         
-        if len(lines) > 10:
-            summary_lines.append("...")
-            summary_lines.extend(lines[-2:])  # Last 2 lines
+        for line in lines:
+            if ':' in line:
+                author = line.split(':')[0].strip()
+                participants.add(author)
+                
+                # Extract potential topics (words longer than 4 chars)
+                content = line.split(':', 1)[1].strip().lower()
+                words = content.split()
+                for word in words:
+                    if len(word) > 4 and word.isalpha():
+                        topics.add(word)
         
-        return "\n".join(summary_lines)
+        # Create a basic summary
+        participant_count = len(participants)
+        participant_text = ", ".join(list(participants)[:3])
+        if participant_count > 3:
+            participant_text += f" and {participant_count - 3} others"
+        
+        topic_text = ", ".join(list(topics)[:5]) if topics else "various topics"
+        
+        summary = f"Conversation between {participant_text} discussing {topic_text}. "
+        summary += f"The discussion included {len(lines)} messages covering multiple topics. "
+        
+        # Add a note about summary quality
+        summary += "\n\n*Note: This is a basic summary. For better quality summaries, OpenAI integration is recommended.*"
+        
+        return summary
     
     def _combine_summaries(self, summaries: List[str]) -> str:
         """Combine channel summaries into final summary"""
