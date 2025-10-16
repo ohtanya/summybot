@@ -251,20 +251,42 @@ class ConversationSummarizer:
     
     async def _summarize_with_transformers(self, text: str) -> str:
         """Summarize using local transformers model"""
-        # Limit text length for local model
-        max_length = 1000
+        # Limit text length for local model and improve input formatting
+        max_length = 800
         if len(text) > max_length:
-            text = text[:max_length] + "..."
+            # Take a representative sample instead of just truncating
+            lines = text.split('\n')
+            if len(lines) > 20:
+                # Take first 40%, middle 20%, and last 40% of conversation
+                first_part = lines[:int(len(lines)*0.4)]
+                middle_part = lines[int(len(lines)*0.4):int(len(lines)*0.6)]
+                last_part = lines[int(len(lines)*0.6):]
+                
+                # Select representative lines from each part
+                sample_lines = first_part[:3] + middle_part[:2] + last_part[-3:]
+                text = '\n'.join(sample_lines)
+            else:
+                text = text[:max_length] + "..."
+        
+        # Format text better for summarization
+        formatted_text = f"Conversation summary: {text}"
         
         summary = await asyncio.to_thread(
             self.local_summarizer,
-            text,
-            max_length=100,
-            min_length=30,
-            do_sample=False
+            formatted_text,
+            max_length=120,
+            min_length=40,
+            do_sample=True,
+            temperature=0.7
         )
         
-        return summary[0]['summary_text']
+        result = summary[0]['summary_text']
+        
+        # Clean up the result
+        if result.startswith("Conversation summary:"):
+            result = result.replace("Conversation summary:", "").strip()
+        
+        return result
     
     def _simple_extractive_summary(self, text: str) -> str:
         """Simple extractive summary as last resort"""
