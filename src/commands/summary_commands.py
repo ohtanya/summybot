@@ -50,9 +50,19 @@ class SummaryCommands(commands.Cog):
             cutoff_time = datetime.utcnow() - timedelta(hours=hours)
             messages = []
             
+            print(f"DEBUG: Looking for messages after {cutoff_time} UTC in channel {channel.name}")
+            print(f"DEBUG: Current time is {datetime.utcnow()} UTC")
+            
+            total_messages = 0
+            bot_messages = 0
             async for message in channel.history(after=cutoff_time, limit=1000):
-                if not message.author.bot:
+                total_messages += 1
+                if message.author.bot:
+                    bot_messages += 1
+                else:
                     messages.append(message)
+            
+            print(f"DEBUG: Found {total_messages} total messages, {bot_messages} bot messages, {len(messages)} user messages")
             
             if not messages:
                 await interaction.followup.send(f"❌ No messages found in {channel.mention} for the last {hours} hours", ephemeral=True)
@@ -135,9 +145,19 @@ class SummaryCommands(commands.Cog):
             cutoff_time = datetime.utcnow() - timedelta(hours=hours)
             messages = []
             
+            print(f"DEBUG: Looking for messages after {cutoff_time} UTC in channel {channel.name}")
+            print(f"DEBUG: Current time is {datetime.utcnow()} UTC")
+            
+            total_messages = 0
+            bot_messages = 0
             async for message in channel.history(after=cutoff_time, limit=1000):
-                if not message.author.bot:
+                total_messages += 1
+                if message.author.bot:
+                    bot_messages += 1
+                else:
                     messages.append(message)
+            
+            print(f"DEBUG: Found {total_messages} total messages, {bot_messages} bot messages, {len(messages)} user messages")
             
             if not messages:
                 await interaction.followup.send(f"❌ No messages found in {channel.mention} for the last {hours} hours", ephemeral=True)
