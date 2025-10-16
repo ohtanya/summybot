@@ -76,12 +76,25 @@ class SummaryCommands(commands.Cog):
             embed = discord.Embed(
                 title=f"📊 Private Summary for #{channel.name}",
                 color=discord.Color.blue(),
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
             
-            # Add summary as main description with better formatting
-            formatted_summary = f"**Channel Activity:**\n{summary}\n"
-            embed.description = formatted_summary
+            # Check if summary is too long for embed description (2048 char limit)
+            if len(summary) > 1900:  # Leave some room for formatting
+                # Split long summaries
+                summary_parts = summary.split('\n\n')
+                embed.description = summary_parts[0][:1900] + "..."
+                
+                # Add remaining parts as fields if possible
+                for i, part in enumerate(summary_parts[1:], 1):
+                    if len(embed.fields) < 10 and len(part) < 1024:  # Field value limit
+                        embed.add_field(
+                            name=f"📝 Part {i+1}",
+                            value=part,
+                            inline=False
+                        )
+            else:
+                embed.description = summary
             
             embed.add_field(
                 name="📍 Server",
@@ -171,10 +184,26 @@ class SummaryCommands(commands.Cog):
             # Create embed
             embed = discord.Embed(
                 title=f"📊 Summary for {channel.name}",
-                description=summary,
                 color=discord.Color.green(),
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
+            
+            # Check if summary is too long for embed description (2048 char limit)
+            if len(summary) > 1900:  # Leave some room for formatting
+                # Split long summaries
+                summary_parts = summary.split('\n\n')
+                embed.description = summary_parts[0][:1900] + "..."
+                
+                # Add remaining parts as fields if possible
+                for i, part in enumerate(summary_parts[1:], 1):
+                    if len(embed.fields) < 10 and len(part) < 1024:  # Field value limit
+                        embed.add_field(
+                            name=f"📝 Part {i+1}",
+                            value=part,
+                            inline=False
+                        )
+            else:
+                embed.description = summary
             
             embed.add_field(
                 name="Timeframe",

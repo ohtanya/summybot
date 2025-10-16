@@ -153,16 +153,14 @@ class ConversationSummarizer:
             participant_text += f" and {len(conv_data['participants']) - 5} others"
         
         # Create a more readable summary format
-        formatted_summary = f"""
-**Channel: #{channel_name}**
+        formatted_summary = f"""**📍 #{channel_name}**
 👥 **Participants:** {participant_text}
-📊 **Activity:** {len(messages)} messages
+� **Messages:** {len(messages)}
 
-**Summary:**
+**💬 Summary:**
 {summary}
 
----
-""".strip()
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━""".strip()
         
         return formatted_summary
     
@@ -173,6 +171,9 @@ class ConversationSummarizer:
         for message in messages:
             # Clean message content
             content = message.content
+            
+            # Handle spoilers - replace with generic text to avoid spoiling in summary
+            content = re.sub(r'\|\|(.+?)\|\|', '[SPOILER CONTENT]', content)
             
             # Remove mentions and replace with names
             content = re.sub(r'<@!?(\d+)>', lambda m: f"@{message.guild.get_member(int(m.group(1))).display_name if message.guild.get_member(int(m.group(1))) else 'user'}", content)
@@ -212,12 +213,15 @@ class ConversationSummarizer:
     async def _summarize_with_openai(self, text: str) -> str:
         """Summarize using OpenAI API"""
         prompt = f"""
-        Please provide a concise summary of this Discord conversation. Focus on:
+        Please provide a concise, well-formatted summary of this Discord conversation. Focus on:
         - Main topics discussed
-        - Key decisions or conclusions
+        - Key decisions or conclusions  
         - Important information shared
         - Overall tone/sentiment
         
+        IMPORTANT: If you see "[SPOILER CONTENT]" in the conversation, mention that spoilers were discussed but do NOT reveal what they were about.
+        
+        Format the summary with clear bullet points or short paragraphs for readability.
         Keep the summary under 200 words and make it engaging.
         
         Conversation:
@@ -273,11 +277,13 @@ class ConversationSummarizer:
         if len(summaries) == 1:
             return summaries[0]
         
-        header = f"## Daily Activity Summary\n*{len(summaries)} channels had significant activity*\n\n"
+        header = f"# 📊 Daily Activity Summary\n*{len(summaries)} channels had significant activity*\n\n"
         
-        combined = header + "\n".join(summaries)
+        combined = header + "\n\n".join(summaries)
         
         # Add footer with stats
-        footer = f"\n---\n*Summary generated at {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}*"
+        from datetime import timezone
+        current_time = datetime.now(timezone.utc)
+        footer = f"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⏰ *Generated at {current_time.strftime('%Y-%m-%d %H:%M UTC')}*"
         
         return combined + footer
