@@ -5,7 +5,7 @@ Summary-related commands for SummyBot
 import discord
 from discord import app_commands
 from discord.ext import commands
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 from ..summarizer import ConversationSummarizer
@@ -46,12 +46,13 @@ class SummaryCommands(commands.Cog):
         await interaction.response.send_message(f"🔄 Generating private summary for {channel.mention} (last {hours} hours)...", ephemeral=True)
         
         try:
-            # Collect messages from the specified timeframe
-            cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+            # Collect messages from the specified timeframe - use timezone-aware datetime
+            current_time = datetime.now(timezone.utc)
+            cutoff_time = current_time - timedelta(hours=hours)
             messages = []
             
-            print(f"DEBUG: Looking for messages after {cutoff_time} UTC in channel {channel.name}")
-            print(f"DEBUG: Current time is {datetime.utcnow()} UTC")
+            print(f"DEBUG: Looking for messages after {cutoff_time} in channel {channel.name}")
+            print(f"DEBUG: Current time is {current_time}")
             
             total_messages = 0
             bot_messages = 0
@@ -141,12 +142,13 @@ class SummaryCommands(commands.Cog):
         await interaction.response.send_message(f"🔄 Generating summary for {channel.mention} (last {hours} hours)...", ephemeral=True)
         
         try:
-            # Collect messages from the specified timeframe
-            cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+            # Collect messages from the specified timeframe - use timezone-aware datetime
+            current_time = datetime.now(timezone.utc)
+            cutoff_time = current_time - timedelta(hours=hours)
             messages = []
             
-            print(f"DEBUG: Looking for messages after {cutoff_time} UTC in channel {channel.name}")
-            print(f"DEBUG: Current time is {datetime.utcnow()} UTC")
+            print(f"DEBUG: Looking for messages after {cutoff_time} in channel {channel.name}")
+            print(f"DEBUG: Current time is {current_time}")
             
             total_messages = 0
             bot_messages = 0
