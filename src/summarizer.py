@@ -105,7 +105,7 @@ class ConversationSummarizer:
         
         return formatted_text
     
-    async def summarize_conversations(self, messages: List[discord.Message]) -> str:
+    async def summarize_conversations(self, messages: List[discord.Message], custom_prompt: str = None) -> str:
         """Generate a summary from a list of Discord messages"""
         if not messages:
             return "No conversations found for today."
@@ -118,7 +118,7 @@ class ConversationSummarizer:
         for channel_name, conv_data in conversations.items():
             try:
                 channel_summary = await self._summarize_channel_conversations(
-                    channel_name, conv_data
+                    channel_name, conv_data, custom_prompt
                 )
                 if channel_summary:
                     summaries.append(channel_summary)
@@ -180,7 +180,7 @@ class ConversationSummarizer:
         
         return topics
     
-    async def _summarize_channel_conversations(self, channel_name: str, conv_data: Dict) -> Optional[str]:
+    async def _summarize_channel_conversations(self, channel_name: str, conv_data: Dict, custom_prompt: str = None) -> Optional[str]:
         """Summarize conversations for a specific channel"""
         messages = conv_data['messages']
         
@@ -194,7 +194,7 @@ class ConversationSummarizer:
             return None
         
         # Generate summary using available method
-        summary = await self._generate_summary(conversation_text)
+        summary = await self._generate_summary(conversation_text, custom_prompt)
         
         if not summary:
             return None
@@ -243,7 +243,7 @@ class ConversationSummarizer:
         
         return "\n".join(conversation_lines)
     
-    async def _generate_summary(self, text: str) -> Optional[str]:
+    async def _generate_summary(self, text: str, custom_prompt: str = None) -> Optional[str]:
         """Generate summary using available method"""
         print(f"DEBUG: Generating summary for text length: {len(text)}")
         
@@ -251,7 +251,7 @@ class ConversationSummarizer:
         if self.openai_client:
             try:
                 print("DEBUG: Attempting OpenAI summarization")
-                result = await self._summarize_with_openai(text)
+                result = await self._summarize_with_openai(text, custom_prompt)
                 print(f"DEBUG: OpenAI summary successful: {len(result)} characters")
                 return result
             except Exception as e:
@@ -273,10 +273,20 @@ class ConversationSummarizer:
         print("DEBUG: Using fallback extractive summary")
         return self._simple_extractive_summary(text)
     
-    async def _summarize_with_openai(self, text: str) -> str:
+    async def _summarize_with_openai(self, text: str, custom_prompt: str = None) -> str:
         """Summarize using OpenAI API"""
+        
+        # Add custom prompt section if provided
+        custom_section = ""
+        if custom_prompt:
+            custom_section = f"""
+        
+        SPECIAL FOCUS: Pay special attention to this question: "{custom_prompt}"
+        Make sure to address this question specifically in your summary if the conversation contains relevant information.
+        """
+        
         prompt = f"""
-        Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about. Make each bullet point detailed enough to give good context about what happened.
+        Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about. Make each bullet point detailed enough to give good context about what happened.{custom_section}
 
         FORMAT: Use bullet points (•) for easy reading. Add a relevant emoji at the start of each bullet point (use sparingly - max one per bullet). Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 

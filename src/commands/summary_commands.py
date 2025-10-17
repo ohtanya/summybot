@@ -285,5 +285,113 @@ class SummaryCommands(commands.Cog):
             logger.error(f"Error in test summary: {e}")
             await interaction.followup.send("❌ An error occurred during the test", ephemeral=True)
 
+    @app_commands.command(name='custom_summary', description='Generate a summary with a custom question/focus')
+    @app_commands.describe(
+        question='Specific question or topic to focus on (e.g., "what happened when people talked about the ghost dick book?")',
+        channel='Channel to summarize (defaults to current channel)',
+        hours='Number of hours to look back (default: 24, max: 168)'
+    )
+    async def custom_summary(
+        self, 
+        interaction: discord.Interaction, 
+        question: str,
+        channel: discord.TextChannel = None, 
+        hours: int = 24
+    ):
+        """Generate a summary focused on a specific question or topic"""
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("❌ You need 'Manage Messages' permission to use this command.", ephemeral=True)
+            return
+            
+        if channel is None:
+            channel = interaction.channel
+        
+        if hours > 168:  # Limit to 1 week
+            await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
+            return
+        
+        await interaction.response.send_message(f"🔍 Generating custom summary for {channel.mention} focused on: \"{question}\"...", ephemeral=True)
+        
+        try:
+            # Collect messages from the specified timeframe - use timezone-aware datetime
+            current_time = datetime.now(timezone.utc)
+            after_time = current_time - timedelta(hours=hours)
+            
+            print(f"DEBUG: Collecting messages after {after_time} (UTC)")
+            
+            messages = []
+            async for message in channel.history(after=after_time, limit=None):
+                if not message.author.bot:  # Skip bot messages
+                    messages.append(message)
+                    
+            print(f"DEBUG: Found {len(messages)} messages")
+            
+            if not messages:
+                await interaction.followup.send(f"❌ No messages found in {channel.mention} for the last {hours} hours", ephemeral=True)
+                return
+            
+            # Generate summary with custom prompt
+            summary = await self.summarizer.summarize_conversations(messages, custom_prompt=question)
+            
+            # Create embed for the summary
+            embed = discord.Embed(
+                title=f"🔍 Custom Summary - {channel.name}",
+                color=discord.Color.purple(),
+                timestamp=datetime.utcnow()
+            )
+            
+            # Add the custom question as a field
+            embed.add_field(
+                name="❓ Focused Question",
+                value=f"*{question}*",
+                inline=False
+            )
+            
+            # Handle long summaries by splitting them
+            if len(summary) > 4096:  # Embed description limit
+                # Split into parts and add as fields
+                parts = [summary[i:i+1024] for i in range(0, len(summary), 1024)]
+                embed.description = "Summary (split due to length):"
+                
+                for i, part in enumerate(parts[:10]):  # Discord limit of 25 fields, use 10 for safety
+                    if len(embed.fields) < 10 and len(part) < 1024:  # Field value limit
+                        embed.add_field(
+                            name=f"📝 Part {i+1}",
+                            value=part,
+                            inline=False
+                        )
+            else:
+                embed.add_field(
+                    name="📝 Summary",
+                    value=summary,
+                    inline=False
+                )
+            
+            embed.add_field(
+                name="📍 Channel",
+                value=channel.mention,
+                inline=True
+            )
+            
+            embed.add_field(
+                name="⏰ Timeframe", 
+                value=f"Last {hours} hours",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="📈 Messages Analyzed",
+                value=f"{len(messages)} messages",
+                inline=True
+            )
+            
+            embed.set_footer(text=f"Custom summary requested by {interaction.user.display_name}")
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"Error in custom summary: {e}")
+            await interaction.followup.send("❌ An error occurred during the custom summary generation", ephemeral=True)
+
 async def setup(bot):
     await bot.add_cog(SummaryCommands(bot))
