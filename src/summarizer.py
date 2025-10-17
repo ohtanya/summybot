@@ -226,28 +226,33 @@ class ConversationSummarizer:
     async def _summarize_with_openai(self, text: str) -> str:
         """Summarize using OpenAI API"""
         prompt = f"""
-        Create a witty, sarcastic summary of this Discord conversation. You're writing for someone who missed the chaos and wants to know what ridiculous things their friends were up to. Be playfully mean and poke fun at the members while summarizing what happened.
+        Create a witty, sarcastic summary of this Discord conversation using bullet points. You're writing for someone who missed the chaos and wants to know what ridiculous things their friends were up to. Be playfully mean and poke fun at the members while summarizing what happened.
 
-        🎭 **Writing Style:**
-        • Use a humorous, slightly sarcastic tone
-        • Gently roast the participants and their choices
-        • Point out funny contradictions or silly moments
-        • Make jokes about reading habits, procrastination, or typical Discord behavior
-        • Keep it friendly but snarky - like a friend making fun of friends
+        FORMAT: Use bullet points (•) for easy reading. Add a relevant emoji at the start of each bullet point (use sparingly - max one per bullet). Structure like:
 
-        📝 **Content to Include:**
-        • Main topics discussed (with comedic commentary)
-        • Books, media, or content mentioned (mock their taste if appropriate)
-        • Funny or memorable quotes
-        • Any drama, debates, or chaos that ensued
-        • Poor life choices or questionable decisions made
+        📚 **What Went Down:**
+        • 📖 [Roast someone's reading choices/speed/habits]
+        • 🎭 [Mock someone's dramatic reactions or decisions]
+        • 💬 [Highlight funny quotes or memorable moments]
 
-        Keep it concise but entertaining - aim for 150-250 words max. Make the absent person feel like they missed out on some quality entertainment and mild roasting.
+        🎪 **The Drama/Chaos:**
+        • [Any debates, arguments, or questionable life choices]
+        • [Funny contradictions or silly moments]
+
+        🏆 **Today's MVP of Poor Decisions:**
+        • [Pick the most mockable moment/person]
+
+        **Writing Style:**
+        • Keep each bullet point short and punchy
+        • Gently roast participants and their choices
+        • Make jokes about typical Discord behavior
+        • Stay friendly but snarky - like roasting friends
+        • 150-200 words total max
 
         IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
 
         Conversation:
-        {text[:3500]}  # Reduced context for shorter summaries
+        {text[:3500]}
         """
         
         response = await asyncio.to_thread(
