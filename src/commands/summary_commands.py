@@ -285,13 +285,13 @@ class SummaryCommands(commands.Cog):
             logger.error(f"Error in test summary: {e}")
             await interaction.followup.send("❌ An error occurred during the test", ephemeral=True)
 
-    @app_commands.command(name='custom_summary', description='Generate a summary with a custom question/focus')
+    @app_commands.command(name='summy', description='Generate a summary with a custom question/focus')
     @app_commands.describe(
         question='Specific question or topic to focus on (e.g., "what happened when people talked about the ghost dick book?")',
         channel='Channel to summarize (defaults to current channel)',
         hours='Number of hours to look back (default: 24, max: 168)'
     )
-    async def custom_summary(
+    async def summy(
         self, 
         interaction: discord.Interaction, 
         question: str,
@@ -310,7 +310,7 @@ class SummaryCommands(commands.Cog):
             await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
             return
         
-        await interaction.response.send_message(f"🔍 Generating custom summary for {channel.mention} focused on: \"{question}\"...", ephemeral=True)
+        await interaction.response.send_message(f"🔍 Generating summy for {channel.mention} focused on: \"{question}\"...", ephemeral=True)
         
         try:
             # Collect messages from the specified timeframe - use timezone-aware datetime
@@ -335,7 +335,7 @@ class SummaryCommands(commands.Cog):
             
             # Create embed for the summary
             embed = discord.Embed(
-                title=f"🔍 Custom Summary - {channel.name}",
+                title=f"🔍 Summy - {channel.name}",
                 color=discord.Color.purple(),
                 timestamp=datetime.utcnow()
             )
@@ -385,13 +385,13 @@ class SummaryCommands(commands.Cog):
                 inline=True
             )
             
-            embed.set_footer(text=f"Custom summary requested by {interaction.user.display_name}")
+            embed.set_footer(text=f"Summy requested by {interaction.user.display_name}")
             
             await interaction.followup.send(embed=embed, ephemeral=True)
             
         except Exception as e:
-            logger.error(f"Error in custom summary: {e}")
-            await interaction.followup.send("❌ An error occurred during the custom summary generation", ephemeral=True)
+            logger.error(f"Error in summy: {e}")
+            await interaction.followup.send("❌ An error occurred during the summy generation", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(SummaryCommands(bot))
