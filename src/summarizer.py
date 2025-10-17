@@ -226,27 +226,50 @@ class ConversationSummarizer:
     async def _summarize_with_openai(self, text: str) -> str:
         """Summarize using OpenAI API"""
         prompt = f"""
-        Please provide a concise, well-formatted summary of this Discord conversation. Focus on:
-        - Main topics discussed
-        - Key decisions or conclusions  
-        - Important information shared
-        - Overall tone/sentiment
-        
-        IMPORTANT: If you see "[SPOILER CONTENT]" in the conversation, mention that spoilers were discussed but do NOT reveal what they were about.
-        
-        Format the summary with clear bullet points or short paragraphs for readability.
-        Keep the summary under 200 words and make it engaging.
-        
+        You are creating a detailed, engaging summary for someone who cares deeply about their Discord community and wants to feel connected to what happened while they were away. Write a rich, narrative-style summary that captures:
+
+        📚 **WHAT HAPPENED** (be specific and detailed):
+        • Exact topics discussed with context and details
+        • Books, media, games, or content mentioned (with titles, authors, opinions)
+        • Personal updates, news, or announcements shared
+        • Interesting facts, discoveries, or resources exchanged
+        • Any decisions made or plans discussed
+
+        💬 **THE CONVERSATIONS** (capture the social dynamics):
+        • Who initiated topics and how others responded
+        • Funny moments, jokes, or memorable exchanges
+        • Disagreements, debates, or different perspectives shared
+        • Supportive moments or advice given
+        • Natural conversation flow and how topics evolved
+
+        🎭 **THE VIBE** (capture emotions and atmosphere):
+        • Overall mood and energy of the conversations
+        • Excitement, frustration, humor, or other emotions expressed
+        • Group dynamics and how people interacted
+        • Casual banter vs serious discussions
+
+        🔍 **SPECIFIC DETAILS** (don't generalize):
+        • Quote interesting or memorable things people said
+        • Mention specific recommendations, suggestions, or advice
+        • Include reaction details and follow-up comments
+        • Note timing if relevant (morning chat vs late night discussion)
+
+        Write in an engaging, storytelling style that makes the reader feel like they experienced the conversations themselves. Use natural language, not bullet points. Be thorough and paint a vivid picture of the community interaction.
+
+        IMPORTANT: If you see "[SPOILER CONTENT]", mention spoiler discussions occurred but don't reveal content.
+
+        Aim for 400-600 words to capture the full richness of the interactions.
+
         Conversation:
-        {text[:3000]}  # Limit text length for API
+        {text[:5000]}  # Increased context for detailed summaries
         """
         
         response = await asyncio.to_thread(
             self.openai_client.chat.completions.create,
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
-            temperature=0.7
+            max_tokens=600,  # Increased for detailed summaries
+            temperature=0.8  # Slightly more creative for engaging narrative
         )
         
         return response.choices[0].message.content.strip()
