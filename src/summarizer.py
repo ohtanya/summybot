@@ -73,32 +73,12 @@ class ConversationSummarizer:
                 logger.warning(f"Failed to initialize local summarizer: {e}")
     
     def _format_usernames_with_colors(self, text: str, participants: List[str]) -> str:
-        """Apply color coding and bold formatting to usernames in the text"""
-        # Define color mappings for specific users using ANSI escape codes
-        user_colors = {
-            'TantalizingTangerine': '\033[35m',      # Magenta/Purple
-            'annbland': '\033[31m',                  # Red
-            'HelpfulKitten': '\033[94m',             # Light Blue
-            'Emma': '\033[95m',                      # Light Magenta (Pink)
-            'Theris Valayrin': '\033[90m',           # Dark Grey
-            'doobiegirl': '\033[96m'                 # Cyan (Teal)
-        }
-        
+        """Apply bold formatting to all usernames in the text"""
         formatted_text = text
         
         for participant in participants:
-            # Check if this user has a specific color assigned
-            if participant in user_colors:
-                color_code = user_colors[participant]
-                reset_code = '\033[0m'  # Reset to default color
-                # Apply color and bold formatting
-                colored_format = f"**{color_code}{participant}{reset_code}**"
-            else:
-                # Default: just bold for users without specific colors
-                colored_format = f"**{participant}**"
-            
-            # Replace all instances of the username (case-sensitive)
-            formatted_text = formatted_text.replace(participant, colored_format)
+            # Make sure all usernames are bolded
+            formatted_text = formatted_text.replace(participant, f"**{participant}**")
         
         return formatted_text
     
