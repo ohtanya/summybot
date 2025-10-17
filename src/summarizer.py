@@ -276,27 +276,23 @@ class ConversationSummarizer:
     async def _summarize_with_openai(self, text: str) -> str:
         """Summarize using OpenAI API"""
         prompt = f"""
-        Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about.
+        Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about. Make each bullet point detailed enough to give good context about what happened.
 
-        FORMAT: Use bullet points (•) for easy reading. Add a relevant emoji at the start of each bullet point (use sparingly - max one per bullet). Structure like:
+        FORMAT: Use bullet points (•) for easy reading. Add a relevant emoji at the start of each bullet point (use sparingly - max one per bullet). Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
         📚 **What Went Down:**
-        • 📖 [Summarize main topics or discussions]
-        • 🎭 [Note any interesting reactions or decisions]
-        • 💬 [Highlight memorable quotes or moments]
+        • 📖 [Detailed summary of main topics, discussions, or activities - include who was involved and what they talked about]
+        • 🎭 [Specific reactions, decisions, or responses people had - explain the context]
+        • 💬 [Notable quotes or memorable moments - provide enough context to understand why it was interesting]
 
         🎪 **Notable Moments:**
-        • [Any debates, discussions, or interesting conversations]
-        • [Funny or noteworthy moments]
+        • [Detailed explanation of any debates, discussions, or interesting conversations - who participated and what the topic was]
+        • [Funny or noteworthy moments with enough context to understand what happened]
 
         🏆 **Key Highlights:**
-        • [Most important or interesting moments]
+        • [Most important or interesting moments with full context - explain why it was significant]
 
-        **Writing Style:**
-        • Keep it casual and friendly
-        • Focus on what actually happened
-        • Be informative but light-hearted
-        • 150-200 words total max
+        Keep it casual and friendly, focus on what actually happened, and aim for 200-250 words total. 
 
         IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
 
@@ -308,7 +304,7 @@ class ConversationSummarizer:
             self.openai_client.chat.completions.create,
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,  # Much shorter for concise summaries
+            max_tokens=400,  # Increased for more detailed bullet points
             temperature=0.6  # Moderate creativity for friendly but focused summaries
         )
         
