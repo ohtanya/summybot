@@ -276,27 +276,26 @@ class ConversationSummarizer:
     async def _summarize_with_openai(self, text: str) -> str:
         """Summarize using OpenAI API"""
         prompt = f"""
-        Create a witty, sarcastic summary of this Discord conversation using bullet points. You're writing for someone who missed the chaos and wants to know what ridiculous things their friends were up to. Be playfully mean and poke fun at the members while summarizing what happened.
+        Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about.
 
         FORMAT: Use bullet points (•) for easy reading. Add a relevant emoji at the start of each bullet point (use sparingly - max one per bullet). Structure like:
 
         📚 **What Went Down:**
-        • 📖 [Roast someone's reading choices/speed/habits]
-        • 🎭 [Mock someone's dramatic reactions or decisions]
-        • 💬 [Highlight funny quotes or memorable moments]
+        • 📖 [Summarize main topics or discussions]
+        • 🎭 [Note any interesting reactions or decisions]
+        • 💬 [Highlight memorable quotes or moments]
 
-        🎪 **The Drama/Chaos:**
-        • [Any debates, arguments, or questionable life choices]
-        • [Funny contradictions or silly moments]
+        🎪 **Notable Moments:**
+        • [Any debates, discussions, or interesting conversations]
+        • [Funny or noteworthy moments]
 
-        🏆 **Today's MVP of Poor Decisions:**
-        • [Pick the most mockable moment/person]
+        🏆 **Key Highlights:**
+        • [Most important or interesting moments]
 
         **Writing Style:**
-        • Keep each bullet point short and punchy
-        • Gently roast participants and their choices
-        • Make jokes about typical Discord behavior
-        • Stay friendly but snarky - like roasting friends
+        • Keep it casual and friendly
+        • Focus on what actually happened
+        • Be informative but light-hearted
         • 150-200 words total max
 
         IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
@@ -310,7 +309,7 @@ class ConversationSummarizer:
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=300,  # Much shorter for concise summaries
-            temperature=0.9  # Higher for more humor and sass
+            temperature=0.6  # Moderate creativity for friendly but focused summaries
         )
         
         return response.choices[0].message.content.strip()
@@ -401,9 +400,4 @@ class ConversationSummarizer:
         
         combined = header + "\n\n".join(summaries)
         
-        # Add footer with stats
-        from datetime import timezone
-        current_time = datetime.now(timezone.utc)
-        footer = f"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⏰ *Generated at {current_time.strftime('%Y-%m-%d %H:%M UTC')}*"
-        
-        return combined + footer
+        return combined
