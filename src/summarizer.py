@@ -83,23 +83,54 @@ class ConversationSummarizer:
             'Theris Valayrin': '🖤',         # Black heart emoji
             'doobiegirl': '🩵',              # Blue heart emoji
             'Matt': '🟦',                    # Blue circle emoji
-            '🌹 liliesanddaisies 🌻🌼': '🌹',        # Rose emoji
+            'liliesanddaisies': '🌹',        # Rose emoji
+            '🌹 liliesanddaisies 🌻🌼': '🌹', # Rose emoji (decorated name)
             'myxdvz': '🐨',                  # Diamond emoji
             'bee!': '🐝',                     # Bee emoji
-            'bluecupgreenspoon': '🦋',                     # Bee emoji
+            'bluecupgreenspoon': '🦋',       # Butterfly emoji
         }
         
         formatted_text = text
         
+        # Debug logging to see what participants we're working with
+        print(f"DEBUG: Participants found: {participants}")
+        
         for participant in participants:
-            # Check if this user has a specific emoji assigned
+            print(f"DEBUG: Processing participant: '{participant}'")
+            
+            # Check if this user has a specific emoji assigned (exact match first)
+            emoji = None
+            matched_key = None
+            
+            # First try exact match
             if participant in user_emojis:
                 emoji = user_emojis[participant]
+                matched_key = participant
+                print(f"DEBUG: Exact match found for '{participant}' -> {emoji}")
+            else:
+                # Try partial matching for cases like "🌹 liliesanddaisies 🌻🌼"
+                for username, user_emoji in user_emojis.items():
+                    # Check if the participant contains the username (for decorated names)
+                    if username in participant or participant in username:
+                        emoji = user_emoji
+                        matched_key = username
+                        print(f"DEBUG: Partial match found: '{participant}' matches '{username}' -> {emoji}")
+                        break
+                    # Also try case-insensitive matching
+                    elif username.lower() == participant.lower():
+                        emoji = user_emoji
+                        matched_key = username
+                        print(f"DEBUG: Case-insensitive match found: '{participant}' matches '{username}' -> {emoji}")
+                        break
+            
+            if emoji:
                 # Replace with emoji and bolded version
                 formatted_name = f"{emoji} **{participant}**"
+                print(f"DEBUG: Formatting '{participant}' as '{formatted_name}'")
             else:
                 # Default: just bold for users without specific emojis
                 formatted_name = f"**{participant}**"
+                print(f"DEBUG: No emoji found for '{participant}', using bold only")
             
             # Replace all instances of the username (case-sensitive)
             formatted_text = formatted_text.replace(participant, formatted_name)
