@@ -40,13 +40,21 @@ class ConversationSummarizer:
             # If not found in environment, try loading from .env file
             if not api_key:
                 try:
-                    with open('.env', 'r') as f:
-                        for line in f:
-                            if line.startswith('OPENAI_API_KEY='):
-                                api_key = line.split('=', 1)[1].strip()
+                    # Try current directory first, then the parent directory
+                    env_paths = ['.env', '../.env', '/home/tanya/summybot/.env']
+                    for env_path in env_paths:
+                        try:
+                            with open(env_path, 'r') as f:
+                                for line in f:
+                                    if line.startswith('OPENAI_API_KEY='):
+                                        api_key = line.split('=', 1)[1].strip()
+                                        break
+                            if api_key:
                                 break
-                except FileNotFoundError:
-                    pass
+                        except FileNotFoundError:
+                            continue
+                except Exception as e:
+                    logger.debug(f"Error loading .env file: {e}")
             
             if api_key:
                 self.openai_client = OpenAI(api_key=api_key)
