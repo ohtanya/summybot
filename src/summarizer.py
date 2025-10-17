@@ -226,50 +226,36 @@ class ConversationSummarizer:
     async def _summarize_with_openai(self, text: str) -> str:
         """Summarize using OpenAI API"""
         prompt = f"""
-        You are creating a detailed, engaging summary for someone who cares deeply about their Discord community and wants to feel connected to what happened while they were away. Write a rich, narrative-style summary that captures:
+        Create a witty, sarcastic summary of this Discord conversation. You're writing for someone who missed the chaos and wants to know what ridiculous things their friends were up to. Be playfully mean and poke fun at the members while summarizing what happened.
 
-        📚 **WHAT HAPPENED** (be specific and detailed):
-        • Exact topics discussed with context and details
-        • Books, media, games, or content mentioned (with titles, authors, opinions)
-        • Personal updates, news, or announcements shared
-        • Interesting facts, discoveries, or resources exchanged
-        • Any decisions made or plans discussed
+        🎭 **Writing Style:**
+        • Use a humorous, slightly sarcastic tone
+        • Gently roast the participants and their choices
+        • Point out funny contradictions or silly moments
+        • Make jokes about reading habits, procrastination, or typical Discord behavior
+        • Keep it friendly but snarky - like a friend making fun of friends
 
-        💬 **THE CONVERSATIONS** (capture the social dynamics):
-        • Who initiated topics and how others responded
-        • Funny moments, jokes, or memorable exchanges
-        • Disagreements, debates, or different perspectives shared
-        • Supportive moments or advice given
-        • Natural conversation flow and how topics evolved
+        📝 **Content to Include:**
+        • Main topics discussed (with comedic commentary)
+        • Books, media, or content mentioned (mock their taste if appropriate)
+        • Funny or memorable quotes
+        • Any drama, debates, or chaos that ensued
+        • Poor life choices or questionable decisions made
 
-        🎭 **THE VIBE** (capture emotions and atmosphere):
-        • Overall mood and energy of the conversations
-        • Excitement, frustration, humor, or other emotions expressed
-        • Group dynamics and how people interacted
-        • Casual banter vs serious discussions
+        Keep it concise but entertaining - aim for 150-250 words max. Make the absent person feel like they missed out on some quality entertainment and mild roasting.
 
-        🔍 **SPECIFIC DETAILS** (don't generalize):
-        • Quote interesting or memorable things people said
-        • Mention specific recommendations, suggestions, or advice
-        • Include reaction details and follow-up comments
-        • Note timing if relevant (morning chat vs late night discussion)
-
-        Write in an engaging, storytelling style that makes the reader feel like they experienced the conversations themselves. Use natural language, not bullet points. Be thorough and paint a vivid picture of the community interaction.
-
-        IMPORTANT: If you see "[SPOILER CONTENT]", mention spoiler discussions occurred but don't reveal content.
-
-        Aim for 400-600 words to capture the full richness of the interactions.
+        IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
 
         Conversation:
-        {text[:5000]}  # Increased context for detailed summaries
+        {text[:3500]}  # Reduced context for shorter summaries
         """
         
         response = await asyncio.to_thread(
             self.openai_client.chat.completions.create,
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=600,  # Increased for detailed summaries
-            temperature=0.8  # Slightly more creative for engaging narrative
+            max_tokens=300,  # Much shorter for concise summaries
+            temperature=0.9  # Higher for more humor and sass
         )
         
         return response.choices[0].message.content.strip()
