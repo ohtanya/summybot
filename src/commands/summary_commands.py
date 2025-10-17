@@ -318,5 +318,216 @@ class SummaryCommands(commands.Cog):
             logger.error(f"Error in summy: {e}")
             await interaction.followup.send("❌ An error occurred during the summy generation", ephemeral=True)
 
+    @app_commands.command(name='preview_summary', description='Generate a summary and choose where to send it')
+    @app_commands.describe(
+        channel='Channel to summarize (defaults to current channel)',
+        hours='Number of hours to look back (default: 24, max: 168)'
+    )
+    async def preview_summary(
+        self, 
+        interaction: discord.Interaction, 
+        channel: discord.TextChannel = None, 
+        hours: int = 24
+    ):
+        """Generate a summary preview with options to send it different places"""
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("❌ You need 'Manage Messages' permission to use this command.", ephemeral=True)
+            return
+            
+        if channel is None:
+            channel = interaction.channel
+        
+        if hours > 168:  # Limit to 1 week
+            await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
+            return
+        
+        await interaction.response.send_message(f"🔄 Generating summary preview for {channel.mention} (last {hours} hours)...", ephemeral=True)
+        
+        try:
+            # Collect messages from the specified timeframe
+            current_time = datetime.now(timezone.utc)
+            cutoff_time = current_time - timedelta(hours=hours)
+            messages = []
+            
+            total_messages = 0
+            bot_messages = 0
+            async for message in channel.history(after=cutoff_time, limit=1000):
+                total_messages += 1
+                if message.author.bot:
+                    bot_messages += 1
+                else:
+                    messages.append(message)
+            
+            if not messages:
+                await interaction.followup.send(f"❌ No messages found in {channel.mention} for the last {hours} hours", ephemeral=True)
+                return
+            
+            # Generate summary
+            summary = await self.summarizer.summarize_conversations(messages)
+            
+            # Create preview embed
+            embed = discord.Embed(
+                title=f"📋 Summary Preview for #{channel.name}",
+                color=discord.Color.gold(),
+                timestamp=datetime.now(timezone.utc)
+            )
+            
+            # Handle long summaries
+            if len(summary) > 1900:
+                summary_parts = summary.split('\n\n')
+                embed.description = summary_parts[0][:1900] + "..."
+                
+                for i, part in enumerate(summary_parts[1:], 1):
+                    if len(embed.fields) < 10 and len(part) < 1024:
+                        embed.add_field(
+                            name=f"📝 Part {i+1}",
+                            value=part,
+                            inline=False
+                        )
+            else:
+                embed.description = summary
+            
+            embed.add_field(
+                name="📊 Stats",
+                value=f"**Messages:** {len(messages)}\n**Timeframe:** Last {hours} hours",
+                inline=True
+            )
+            
+            embed.set_footer(text="Choose where to send this summary:")
+            
+            # Create view with buttons
+            view = SummaryDestinationView(embed, channel, len(messages), hours)
+            
+            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"Error generating summary preview: {e}")
+            await interaction.followup.send("❌ An error occurred while generating the summary preview", ephemeral=True)
+
+
+class SummaryDestinationView(discord.ui.View):
+    """View with buttons to choose where to send the summary"""
+    
+    def __init__(self, summary_embed: discord.Embed, channel: discord.TextChannel, message_count: int, hours: int):
+        super().__init__(timeout=300)  # 5 minute timeout
+        self.summary_embed = summary_embed
+        self.channel = channel
+        self.message_count = message_count
+        self.hours = hours
+    
+    @discord.ui.button(label='Send to Channel', style=discord.ButtonStyle.primary, emoji='📢')
+    async def send_to_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Send the summary to the current channel"""
+        try:
+            # Update embed for public posting
+            public_embed = discord.Embed(
+                title=f"📊 Summary for #{self.channel.name}",
+                description=self.summary_embed.description,
+                color=discord.Color.green(),
+                timestamp=datetime.now(timezone.utc)
+            )
+            
+            # Copy any fields from the original embed
+            for field in self.summary_embed.fields:
+                if field.name != "📊 Stats":  # Skip the stats field, we'll recreate it
+                    public_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+            
+            public_embed.add_field(
+                name="Timeframe",
+                value=f"Last {self.hours} hours",
+                inline=True
+            )
+            
+            public_embed.add_field(
+                name="Messages Analyzed",
+                value=str(self.message_count),
+                inline=True
+            )
+            
+            public_embed.set_footer(text=f"Requested by {interaction.user.display_name}")
+            
+            # Send to the channel
+            await self.channel.send(embed=public_embed)
+            
+            # Update the preview message
+            await interaction.response.edit_message(
+                content="✅ Summary sent to the channel!",
+                embed=None,
+                view=None
+            )
+            
+        except Exception as e:
+            logger.error(f"Error sending summary to channel: {e}")
+            await interaction.response.send_message("❌ Failed to send summary to channel", ephemeral=True)
+    
+    @discord.ui.button(label='Send to DMs', style=discord.ButtonStyle.secondary, emoji='📬')
+    async def send_to_dms(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Send the summary to user's DMs"""
+        try:
+            # Update embed for DM
+            dm_embed = discord.Embed(
+                title=f"📊 Private Summary for #{self.channel.name}",
+                description=self.summary_embed.description,
+                color=discord.Color.blue(),
+                timestamp=datetime.now(timezone.utc)
+            )
+            
+            # Copy any fields from the original embed
+            for field in self.summary_embed.fields:
+                if field.name != "📊 Stats":
+                    dm_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+            
+            dm_embed.add_field(
+                name="📍 Server",
+                value=interaction.guild.name,
+                inline=True
+            )
+            
+            dm_embed.add_field(
+                name="⏰ Timeframe", 
+                value=f"Last {self.hours} hours",
+                inline=True
+            )
+            
+            dm_embed.add_field(
+                name="📈 Messages Analyzed",
+                value=f"{self.message_count} messages",
+                inline=True
+            )
+            
+            dm_embed.set_footer(text=f"Private summary from {interaction.guild.name}")
+            
+            # Send to user's DMs
+            await interaction.user.send(embed=dm_embed)
+            
+            # Update the preview message
+            await interaction.response.edit_message(
+                content="✅ Summary sent to your DMs!",
+                embed=None,
+                view=None
+            )
+            
+        except discord.Forbidden:
+            await interaction.response.send_message("❌ I couldn't send you a DM. Please check your privacy settings.", ephemeral=True)
+        except Exception as e:
+            logger.error(f"Error sending summary to DMs: {e}")
+            await interaction.response.send_message("❌ Failed to send summary to DMs", ephemeral=True)
+    
+    @discord.ui.button(label='Cancel', style=discord.ButtonStyle.danger, emoji='❌')
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Cancel and delete the preview"""
+        await interaction.response.edit_message(
+            content="❌ Summary preview cancelled.",
+            embed=None,
+            view=None
+        )
+    
+    async def on_timeout(self):
+        """Called when the view times out"""
+        # Disable all buttons
+        for item in self.children:
+            item.disabled = True
+
+
 async def setup(bot):
     await bot.add_cog(SummaryCommands(bot))

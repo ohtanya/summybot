@@ -83,7 +83,7 @@ class ConversationSummarizer:
             'Theris Valayrin': '🖤',         # Black heart emoji
             'doobiegirl': '🩵',              # Blue heart emoji
             'Matt': '🟦',                    # Blue circle emoji
-            'liliesanddaisies': '🌹',        # Rose emoji
+            '🌹 liliesanddaisies 🌻🌼': '🌹',        # Rose emoji
             'myxdvz': '🐨',                  # Diamond emoji
             'bee!': '🐝',                     # Bee emoji
             'bluecupgreenspoon': '🦋',                     # Bee emoji
