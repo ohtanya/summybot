@@ -304,25 +304,24 @@ class SummaryCommands(commands.Cog):
                 inline=False
             )
             
-            # Handle long summaries by splitting them
-            if len(summary) > 4096:  # Embed description limit
-                # Split into parts and add as fields
-                parts = [summary[i:i+1024] for i in range(0, len(summary), 1024)]
-                embed.description = "Summary (split due to length):"
-                
-                for i, part in enumerate(parts[:10]):  # Discord limit of 25 fields, use 10 for safety
-                    if len(embed.fields) < 10 and len(part) < 1024:  # Field value limit
-                        embed.add_field(
-                            name=f"📝 Part {i+1}",
-                            value=part,
-                            inline=False
-                        )
-            else:
+            # Handle summaries by checking field limit (1024 chars per field)
+            if len(summary) <= 1024:
+                # Summary fits in a single field
                 embed.add_field(
                     name="📝 Summary",
                     value=summary,
                     inline=False
                 )
+            else:
+                # Split into parts that fit in fields (1024 char limit each)
+                parts = [summary[i:i+1024] for i in range(0, len(summary), 1024)]
+                
+                for i, part in enumerate(parts[:8]):  # Limit to 8 parts to leave room for other fields
+                    embed.add_field(
+                        name=f"📝 Summary - Part {i+1}",
+                        value=part,
+                        inline=False
+                    )
             
             embed.add_field(
                 name="📍 Channel",
