@@ -73,12 +73,35 @@ class ConversationSummarizer:
                 logger.warning(f"Failed to initialize local summarizer: {e}")
     
     def _format_usernames_with_colors(self, text: str, participants: List[str]) -> str:
-        """Apply bold formatting to all usernames in the text"""
+        """Apply emoji and bold formatting to usernames in the text"""
+        # Define emoji mappings for specific users
+        user_emojis = {
+            'TantalizingTangerine': '🟠',    # Orange emoji
+            'annbland': '❤️',                # Red heart emoji
+            'HelpfulKitten': '🐱',           # Black cat emoji  
+            'Emma': '💖',                    # Pink heart emoji
+            'Theris Valayrin': '🖤',         # Black heart emoji
+            'doobiegirl': '💙',              # Blue heart emoji
+            'Matt': '🔵',                    # Blue circle emoji
+            'liliesanddaisies': '🌹',        # Rose emoji
+            'myxdvz': '💎',                  # Diamond emoji
+            'bee!': '🐝'                     # Bee emoji
+        }
+        
         formatted_text = text
         
         for participant in participants:
-            # Make sure all usernames are bolded
-            formatted_text = formatted_text.replace(participant, f"**{participant}**")
+            # Check if this user has a specific emoji assigned
+            if participant in user_emojis:
+                emoji = user_emojis[participant]
+                # Replace with emoji and bolded version
+                formatted_name = f"{emoji} **{participant}**"
+            else:
+                # Default: just bold for users without specific emojis
+                formatted_name = f"**{participant}**"
+            
+            # Replace all instances of the username (case-sensitive)
+            formatted_text = formatted_text.replace(participant, formatted_name)
         
         return formatted_text
     
