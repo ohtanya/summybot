@@ -148,15 +148,19 @@ class ConversationSummarizer:
         
         # Format the channel summary with better readability
         participants = list(conv_data['participants'])  # Show all participants
-        participant_text = ", ".join(participants)
+        
+        # Bold usernames in the summary
+        bolded_summary = summary
+        for participant in participants:
+            # Bold the participant name anywhere it appears in the summary
+            bolded_summary = bolded_summary.replace(participant, f"**{participant}**")
         
         # Create a more readable summary format
         formatted_summary = f"""**📍 #{channel_name}**
-👥 **Participants:** {participant_text}
 � **Messages:** {len(messages)}
 
 **💬 Summary:**
-{summary}
+{bolded_summary}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━""".strip()
         
@@ -311,7 +315,6 @@ class ConversationSummarizer:
         
         # Create a basic summary
         participant_count = len(participants)
-        participant_text = ", ".join(list(participants)[:3])
         if participant_count > 3:
             participant_text += f" and {participant_count - 3} others"
         
