@@ -287,41 +287,16 @@ class SummaryCommands(commands.Cog):
                 await interaction.followup.send(f"❌ No messages found in {channel.mention} for the last {hours} hours", ephemeral=True)
                 return
             
-            # Generate summary with custom prompt
+            # Generate focused answer with custom prompt
             summary = await self.summarizer.summarize_conversations(messages, custom_prompt=question)
             
-            # Create embed for the summary
+            # Create simple embed for the focused answer
             embed = discord.Embed(
-                title=f"🔍 Summy - {channel.name}",
+                title=f"🔍 Summy",
+                description=f"**Question:** {question}\n\n**Answer:**\n{summary}",
                 color=discord.Color.purple(),
                 timestamp=datetime.utcnow()
             )
-            
-            # Add the custom question as a field
-            embed.add_field(
-                name="❓ Focused Question",
-                value=f"*{question}*",
-                inline=False
-            )
-            
-            # Handle summaries by checking field limit (1024 chars per field)
-            if len(summary) <= 1024:
-                # Summary fits in a single field
-                embed.add_field(
-                    name="📝 Summary",
-                    value=summary,
-                    inline=False
-                )
-            else:
-                # Split into parts that fit in fields (1024 char limit each)
-                parts = [summary[i:i+1024] for i in range(0, len(summary), 1024)]
-                
-                for i, part in enumerate(parts[:8]):  # Limit to 8 parts to leave room for other fields
-                    embed.add_field(
-                        name=f"📝 Summary - Part {i+1}",
-                        value=part,
-                        inline=False
-                    )
             
             embed.add_field(
                 name="📍 Channel",
@@ -330,18 +305,12 @@ class SummaryCommands(commands.Cog):
             )
             
             embed.add_field(
-                name="⏰ Timeframe", 
-                value=f"Last {hours} hours",
-                inline=True
-            )
-            
-            embed.add_field(
-                name="📈 Messages Analyzed",
+                name="📈 Messages Scanned",
                 value=f"{len(messages)} messages",
                 inline=True
             )
             
-            embed.set_footer(text=f"Summy requested by {interaction.user.display_name}")
+            embed.set_footer(text=f"Summy • Last {hours} hours")
             
             await interaction.followup.send(embed=embed, ephemeral=True)
             

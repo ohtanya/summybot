@@ -276,45 +276,53 @@ class ConversationSummarizer:
     async def _summarize_with_openai(self, text: str, custom_prompt: str = None) -> str:
         """Summarize using OpenAI API"""
         
-        # Add custom prompt section if provided
-        custom_section = ""
+        # Use completely different approach for custom questions
         if custom_prompt:
-            custom_section = f"""
-        
-        SPECIAL FOCUS: Pay special attention to this question: "{custom_prompt}"
-        Make sure to address this question specifically in your summary if the conversation contains relevant information.
-        """
-        
-        prompt = f"""
-        Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about. Make each bullet point detailed enough to give good context about what happened.{custom_section}
+            prompt = f"""
+            Answer this specific question about the Discord conversation: "{custom_prompt}"
+            
+            Look through the conversation and provide a direct, concise answer. If the answer isn't in the conversation, say so. Focus ONLY on information that directly relates to the question.
+            
+            Keep your response to 100-150 words maximum. Be specific and include relevant usernames when mentioning who said what.
+            
+            IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
+            
+            Conversation:
+            {text[:3500]}
+            """
+            max_tokens = 200  # Much shorter for focused answers
+        else:
+            prompt = f"""
+            Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about. Make each bullet point detailed enough to give good context about what happened.
 
-        FORMAT: Use bullet points (•) for easy reading. Add a relevant emoji at the start of each bullet point (use sparingly - max one per bullet). Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
+            FORMAT: Use bullet points (•) for easy reading. Add a relevant emoji at the start of each bullet point (use sparingly - max one per bullet). Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
-        📚 **What Went Down:**
-        • 📖 [Detailed summary of main topics, discussions, or activities - include who was involved and what they talked about]
-        • 🎭 [Specific reactions, decisions, or responses people had - explain the context]
-        • 💬 [Notable quotes or memorable moments - provide enough context to understand why it was interesting]
+            📚 **What Went Down:**
+            • 📖 [Detailed summary of main topics, discussions, or activities - include who was involved and what they talked about]
+            • 🎭 [Specific reactions, decisions, or responses people had - explain the context]
+            • 💬 [Notable quotes or memorable moments - provide enough context to understand why it was interesting]
 
-        🎪 **Notable Moments:**
-        • [Detailed explanation of any debates, discussions, or interesting conversations - who participated and what the topic was]
-        • [Funny or noteworthy moments with enough context to understand what happened]
+            🎪 **Notable Moments:**
+            • [Detailed explanation of any debates, discussions, or interesting conversations - who participated and what the topic was]
+            • [Funny or noteworthy moments with enough context to understand what happened]
 
-        🏆 **Key Highlights:**
-        • [Most important or interesting moments with full context - explain why it was significant]
+            🏆 **Key Highlights:**
+            • [Most important or interesting moments with full context - explain why it was significant]
 
-        Keep it casual and friendly, focus on what actually happened, and aim for 200-250 words total. 
+            Keep it casual and friendly, focus on what actually happened, and aim for 200-250 words total. 
 
-        IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
+            IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
 
-        Conversation:
-        {text[:3500]}
-        """
+            Conversation:
+            {text[:3500]}
+            """
+            max_tokens = 400  # Longer for detailed summaries
         
         response = await asyncio.to_thread(
             self.openai_client.chat.completions.create,
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=400,  # Increased for more detailed bullet points
+            max_tokens=max_tokens,
             temperature=0.6  # Moderate creativity for friendly but focused summaries
         )
         
