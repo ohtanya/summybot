@@ -414,6 +414,55 @@ class SummaryDestinationView(discord.ui.View):
         self.channel = channel
         self.message_count = message_count
         self.hours = hours
+        self.original_summary = self._extract_summary_text(summary_embed)
+    
+    def _extract_summary_text(self, embed):
+        """Extract the full summary text from embed description and fields"""
+        text = embed.description or ""
+        for field in embed.fields:
+            if field.name.startswith("📝 Part"):
+                text += "\n\n" + field.value
+        return text
+    
+    def _update_embed_with_text(self, new_text):
+        """Update the embed with new summary text"""
+        # Update the summary embed with new text
+        if len(new_text) > 1900:
+            summary_parts = new_text.split('\n\n')
+            self.summary_embed.description = summary_parts[0][:1900] + "..."
+            
+            # Clear existing part fields
+            self.summary_embed.clear_fields()
+            
+            # Add new parts as fields
+            for i, part in enumerate(summary_parts[1:], 1):
+                if len(self.summary_embed.fields) < 9 and len(part) < 1024:  # Leave room for stats
+                    self.summary_embed.add_field(
+                        name=f"📝 Part {i+1}",
+                        value=part,
+                        inline=False
+                    )
+        else:
+            self.summary_embed.description = new_text
+            # Clear any existing part fields
+            fields_to_keep = [f for f in self.summary_embed.fields if not f.name.startswith("📝 Part")]
+            self.summary_embed.clear_fields()
+            for field in fields_to_keep:
+                self.summary_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+        
+        # Re-add stats field
+        self.summary_embed.add_field(
+            name="📊 Stats",
+            value=f"**Messages:** {self.message_count}\n**Timeframe:** Last {self.hours} hours",
+            inline=True
+        )
+    
+    @discord.ui.button(label='Edit Summary', style=discord.ButtonStyle.secondary, emoji='✏️')
+    async def edit_summary(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Open a modal to edit the summary"""
+        current_text = self._extract_summary_text(self.summary_embed)
+        modal = SummaryEditModal(current_text, self)
+        await interaction.response.send_modal(modal)
     
     @discord.ui.button(label='Send to Channel', style=discord.ButtonStyle.primary, emoji='📢')
     async def send_to_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -527,6 +576,45 @@ class SummaryDestinationView(discord.ui.View):
         # Disable all buttons
         for item in self.children:
             item.disabled = True
+
+
+class SummaryEditModal(discord.ui.Modal):
+    """Modal for editing summary text"""
+    
+    def __init__(self, current_text: str, view: SummaryDestinationView):
+        super().__init__(title="Edit Summary")
+        self.view = view
+        
+        # Split long text if needed for the text input (max 4000 chars)
+        if len(current_text) > 4000:
+            current_text = current_text[:3997] + "..."
+        
+        self.summary_input = discord.ui.TextInput(
+            label="Summary Text",
+            style=discord.TextStyle.paragraph,
+            default=current_text,
+            max_length=4000,
+            required=True
+        )
+        self.add_item(self.summary_input)
+    
+    async def on_submit(self, interaction: discord.Interaction):
+        """Handle the modal submission"""
+        try:
+            new_text = self.summary_input.value
+            
+            # Update the view's embed with the new text
+            self.view._update_embed_with_text(new_text)
+            
+            # Update the footer to indicate it was edited
+            self.view.summary_embed.set_footer(text="Choose where to send this summary (edited):")
+            
+            # Edit the original message with the updated embed
+            await interaction.response.edit_message(embed=self.view.summary_embed, view=self.view)
+            
+        except Exception as e:
+            logger.error(f"Error updating summary: {e}")
+            await interaction.response.send_message("❌ Failed to update summary", ephemeral=True)
 
 
 async def setup(bot):
