@@ -242,49 +242,6 @@ class SummaryCommands(commands.Cog):
         except Exception as e:
             logger.error(f"Error generating forced daily summary: {e}")
             await interaction.followup.send("❌ An error occurred while generating the daily summary", ephemeral=True)
-    
-    @app_commands.command(name='test_summary', description='Test summarization with recent messages')
-    async def slash_test_summary(self, interaction: discord.Interaction):
-        """Test the summarization with recent messages from current channel"""
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ You need 'Administrator' permission to use this command.", ephemeral=True)
-            return
-            
-        await interaction.response.send_message("🧪 Testing summarization with recent messages...", ephemeral=True)
-        
-        try:
-            # Get last 50 messages from current channel
-            messages = []
-            async for message in interaction.channel.history(limit=50):
-                if not message.author.bot:
-                    messages.append(message)
-            
-            if len(messages) < 5:
-                await interaction.followup.send("❌ Not enough messages to test summarization", ephemeral=True)
-                return
-            
-            # Generate test summary
-            summary = await self.summarizer.summarize_conversations(messages)
-            
-            embed = discord.Embed(
-                title="🧪 Test Summary",
-                description=summary,
-                color=discord.Color.orange(),
-                timestamp=datetime.utcnow()
-            )
-            
-            embed.add_field(
-                name="Test Messages",
-                value=str(len(messages)),
-                inline=True
-            )
-            
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            
-        except Exception as e:
-            logger.error(f"Error in test summary: {e}")
-            await interaction.followup.send("❌ An error occurred during the test", ephemeral=True)
-
     @app_commands.command(name='summy', description='Generate a summary with a custom question/focus')
     @app_commands.describe(
         question='Specific question or topic to focus on (e.g., "what happened when people talked about the ghost dick book?")',
