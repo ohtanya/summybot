@@ -82,7 +82,7 @@ class ConversationSummarizer:
             'Emma': '💖',                    # Pink heart emoji
             'Theris Valayrin': '🖤',         # Black heart emoji
             'doobiegirl': '💙',              # Blue heart emoji
-            'Matt': '🔵',                    # Blue circle emoji
+            'Matt': '�',                    # Blue square emoji
             'liliesanddaisies': '🌹',        # Rose emoji
             'myxdvz': '💎',                  # Diamond emoji
             'bee!': '🐝'                     # Bee emoji
