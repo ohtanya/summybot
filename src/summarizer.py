@@ -7,7 +7,24 @@ import os
 import asyncio
 from typing import List, Dict, Optional
 import discord
-from datetime import datetime, timedelta
+from datetim        if not summary:
+            return None
+        
+        # Format the channel summary with better readability
+        participants = list(conv_data['participants'])  # Show all participants
+        participant_text = ", ".join(participants)
+        
+        # Create a more readable summary format
+        formatted_summary = f"""**📍 #{channel_name}**
+👥 **Participants:** {participant_text}
+📈 **Messages:** {len(messages)}
+
+**💬 Summary:**
+{summary}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━""".strip()
+        
+        return formatted_summaryimedelta
 import logging
 
 # Optional imports for different summarization methods
@@ -224,26 +241,38 @@ class ConversationSummarizer:
     async def _summarize_with_openai(self, text: str) -> str:
         """Summarize using OpenAI API"""
         prompt = f"""
-        Please provide a concise, well-formatted summary of this Discord conversation. Focus on:
-        - Main topics discussed
-        - Key decisions or conclusions  
-        - Important information shared
-        - Overall tone/sentiment
+        Please provide a detailed, well-formatted summary of this Discord conversation using bullet points. Focus on:
+        
+        **Main Topics Discussed:**
+        • List specific topics with details about what was said
+        
+        **Key Decisions & Actions:**
+        • Include specific decisions made by participants
+        • Note any commitments or plans mentioned
+        
+        **Important Information Shared:**
+        • Books, media, or resources mentioned with details
+        • Personal updates or announcements
+        • Interesting facts or discoveries shared
+        
+        **Individual Contributions:**
+        • What each person specifically discussed or shared (be detailed, don't just say "others")
+        
+        Use bullet points for clarity and include specific details rather than vague summaries. Be thorough but concise.
         
         IMPORTANT: If you see "[SPOILER CONTENT]" in the conversation, mention that spoilers were discussed but do NOT reveal what they were about.
         
-        Format the summary with clear bullet points or short paragraphs for readability.
-        Keep the summary under 200 words and make it engaging.
+        Keep the summary under 300 words but prioritize detail over brevity.
         
         Conversation:
-        {text[:3000]}  # Limit text length for API
+        {text[:4000]}  # Increased text length for more context
         """
         
         response = await asyncio.to_thread(
             self.openai_client.chat.completions.create,
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
+            max_tokens=300,  # Increased for more detailed summaries
             temperature=0.7
         )
         
