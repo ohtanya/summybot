@@ -36,6 +36,18 @@ class ConversationSummarizer:
         # Initialize OpenAI if available and configured
         if OPENAI_AVAILABLE:
             api_key = os.getenv('OPENAI_API_KEY')
+            
+            # If not found in environment, try loading from .env file
+            if not api_key:
+                try:
+                    with open('.env', 'r') as f:
+                        for line in f:
+                            if line.startswith('OPENAI_API_KEY='):
+                                api_key = line.split('=', 1)[1].strip()
+                                break
+                except FileNotFoundError:
+                    pass
+            
             if api_key:
                 self.openai_client = OpenAI(api_key=api_key)
                 logger.info("OpenAI client initialized")
