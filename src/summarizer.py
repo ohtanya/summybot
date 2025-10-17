@@ -297,12 +297,12 @@ class ConversationSummarizer:
 
             FORMAT: Use bullet points (•) for easy reading. Add a relevant emoji at the start of each bullet point (use sparingly - max one per bullet). Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
-            📚 **What Went Down:**
+            **What Went Down:**
             • 📖 [Detailed summary of main topics, discussions, or activities - include who was involved and what they talked about]
             • 🎭 [Specific reactions, decisions, or responses people had - explain the context]
             • 💬 [Notable quotes or memorable moments - provide enough context to understand why it was interesting]
 
-            🎪 **Notable Moments:**
+            **Notable Moments:**
             • [Detailed explanation of any debates, discussions, or interesting conversations - who participated and what the topic was]
             • [Funny or noteworthy moments with enough context to understand what happened]
 
