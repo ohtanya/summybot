@@ -13,7 +13,8 @@ module.exports = {
     min_uptime: '10s',
     env: {
       PYTHONPATH: '/opt/summybot',
-      PYTHONUNBUFFERED: '1'
+      PYTHONUNBUFFERED: '1',
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY
     },
     error_file: './logs/err.log',
     out_file: './logs/out.log',
