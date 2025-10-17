@@ -74,14 +74,14 @@ class ConversationSummarizer:
     
     def _format_usernames_with_colors(self, text: str, participants: List[str]) -> str:
         """Apply color coding and bold formatting to usernames in the text"""
-        # Define color mappings for specific users
+        # Define color mappings for specific users using ANSI escape codes
         user_colors = {
-            'TantalizingTangerine': '🟣',  # Purple
-            'annbland': '🔴',              # Red  
-            'HelpfulKitten': '🔵',         # Baby blue
-            'Emma': '🩷',                  # Baby pink
-            'Theris Valayrin': '⚫',       # Grey
-            'doobiegirl': '🔷'             # Teal
+            'TantalizingTangerine': '\033[35m',      # Magenta/Purple
+            'annbland': '\033[31m',                  # Red
+            'HelpfulKitten': '\033[94m',             # Light Blue
+            'Emma': '\033[95m',                      # Light Magenta (Pink)
+            'Theris Valayrin': '\033[90m',           # Dark Grey
+            'doobiegirl': '\033[96m'                 # Cyan (Teal)
         }
         
         formatted_text = text
@@ -89,9 +89,10 @@ class ConversationSummarizer:
         for participant in participants:
             # Check if this user has a specific color assigned
             if participant in user_colors:
-                color_emoji = user_colors[participant]
-                # Replace with colored and bolded version
-                colored_format = f"{color_emoji} **{participant}**"
+                color_code = user_colors[participant]
+                reset_code = '\033[0m'  # Reset to default color
+                # Apply color and bold formatting
+                colored_format = f"**{color_code}{participant}{reset_code}**"
             else:
                 # Default: just bold for users without specific colors
                 colored_format = f"**{participant}**"
