@@ -2,8 +2,8 @@ module.exports = {
   apps: [{
     name: 'summybot',
     script: 'main.py',
-    interpreter: '/opt/summybot/.venv/bin/python',
-    cwd: '/opt/summybot',
+    interpreter: '/home/tanya/summybot/.venv/bin/python',
+    cwd: '/home/tanya/summybot',
     instances: 1,
     autorestart: true,
     watch: false,
@@ -12,7 +12,7 @@ module.exports = {
     max_restarts: 10,
     min_uptime: '10s',
     env: {
-      PYTHONPATH: '/opt/summybot',
+      PYTHONPATH: '/home/tanya/summybot',
       PYTHONUNBUFFERED: '1',
       OPENAI_API_KEY: process.env.OPENAI_API_KEY
     },
