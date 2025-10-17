@@ -72,6 +72,35 @@ class ConversationSummarizer:
             except Exception as e:
                 logger.warning(f"Failed to initialize local summarizer: {e}")
     
+    def _format_usernames_with_colors(self, text: str, participants: List[str]) -> str:
+        """Apply color coding and bold formatting to usernames in the text"""
+        # Define color mappings for specific users
+        user_colors = {
+            'TantalizingTangerine': '🟣',  # Purple
+            'annbland': '🔴',              # Red  
+            'HelpfulKitten': '🔵',         # Baby blue
+            'Emma': '🩷',                  # Baby pink
+            'Theris Valayrin': '⚫',       # Grey
+            'doobiegirl': '🔷'             # Teal
+        }
+        
+        formatted_text = text
+        
+        for participant in participants:
+            # Check if this user has a specific color assigned
+            if participant in user_colors:
+                color_emoji = user_colors[participant]
+                # Replace with colored and bolded version
+                colored_format = f"{color_emoji} **{participant}**"
+            else:
+                # Default: just bold for users without specific colors
+                colored_format = f"**{participant}**"
+            
+            # Replace all instances of the username (case-sensitive)
+            formatted_text = formatted_text.replace(participant, colored_format)
+        
+        return formatted_text
+    
     async def summarize_conversations(self, messages: List[discord.Message]) -> str:
         """Generate a summary from a list of Discord messages"""
         if not messages:
@@ -169,22 +198,19 @@ class ConversationSummarizer:
         # Format the channel summary with better readability
         participants = list(conv_data['participants'])  # Show all participants
         
-        # Bold usernames in the summary
-        bolded_summary = summary
-        for participant in participants:
-            # Bold the participant name anywhere it appears in the summary
-            bolded_summary = bolded_summary.replace(participant, f"**{participant}**")
+        # Apply color coding and bold formatting to usernames
+        formatted_summary = self._format_usernames_with_colors(summary, participants)
         
         # Create a more readable summary format
-        formatted_summary = f"""**📍 #{channel_name}**
+        final_summary = f"""**📍 #{channel_name}**
 � **Messages:** {len(messages)}
 
 **💬 Summary:**
-{bolded_summary}
+{formatted_summary}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━""".strip()
         
-        return formatted_summary
+        return final_summary
     
     def _prepare_conversation_text(self, messages: List[discord.Message]) -> str:
         """Convert Discord messages to text suitable for summarization"""
