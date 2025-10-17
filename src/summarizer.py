@@ -76,16 +76,17 @@ class ConversationSummarizer:
         """Apply emoji and bold formatting to usernames in the text"""
         # Define emoji mappings for specific users
         user_emojis = {
-            'TantalizingTangerine': '🟠',    # Orange emoji
-            'annbland': '❤️',                # Red heart emoji
-            'HelpfulKitten': '🐱',           # Black cat emoji  
-            'Emma': '💖',                    # Pink heart emoji
+            'TantalizingTangerine': '🍊',    # Orange emoji
+            'annbland': '🍄',                # Red heart emoji
+            'HelpfulKitten': '🐈‍⬛',           # Black cat emoji  
+            'Emma': '🩷',                    # Pink heart emoji
             'Theris Valayrin': '🖤',         # Black heart emoji
-            'doobiegirl': '💙',              # Blue heart emoji
-            'Matt': '�',                    # Blue square emoji
+            'doobiegirl': '🩵',              # Blue heart emoji
+            'Matt': '🟦',                    # Blue circle emoji
             'liliesanddaisies': '🌹',        # Rose emoji
-            'myxdvz': '💎',                  # Diamond emoji
-            'bee!': '🐝'                     # Bee emoji
+            'myxdvz': '🐨',                  # Diamond emoji
+            'bee!': '🐝',                     # Bee emoji
+            'bluecupgreenspoon': '🦋',                     # Bee emoji
         }
         
         formatted_text = text
@@ -290,23 +291,23 @@ class ConversationSummarizer:
             Conversation:
             {text[:3500]}
             """
-            max_tokens = 200  # Much shorter for focused answers
+            max_tokens = 300  # Much shorter for focused answers
         else:
             prompt = f"""
             Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about. Make each bullet point detailed enough to give good context about what happened.
 
-            FORMAT: Use bullet points (•) for easy reading. Add a relevant emoji at the start of each bullet point (use sparingly - max one per bullet). Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
+            FORMAT: Use bullet points (•) for easy reading. Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
             **What Went Down:**
-            • 📖 [Detailed summary of main topics, discussions, or activities - include who was involved and what they talked about]
-            • 🎭 [Specific reactions, decisions, or responses people had - explain the context]
-            • 💬 [Notable quotes or memorable moments - provide enough context to understand why it was interesting]
+            • [Detailed summary of main topics, discussions, or activities - include who was involved and what they talked about]
+            • [Specific reactions, decisions, or responses people had - explain the context]
+            • [Notable quotes or memorable moments - provide enough context to understand why it was interesting]
 
             **Notable Moments:**
             • [Detailed explanation of any debates, discussions, or interesting conversations - who participated and what the topic was]
             • [Funny or noteworthy moments with enough context to understand what happened]
 
-            🏆 **Key Highlights:**
+            **Key Highlights:**
             • [Most important or interesting moments with full context - explain why it was significant]
 
             Keep it casual and friendly, focus on what actually happened, and aim for 200-250 words total. 
