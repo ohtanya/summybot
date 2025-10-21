@@ -327,21 +327,23 @@ class ConversationSummarizer:
             prompt = f"""
             Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about. Make each bullet point detailed enough to give good context about what happened.
 
+            CRITICAL: Always use specific usernames when mentioning people. Never say "a member", "someone", "a user", or "the group" - always name the actual person who said or did something. This is very important for personalized summaries.
+
             FORMAT: Use bullet points (•) for easy reading. Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
             **What Went Down:**
-            • [Detailed summary of main topics, discussions, or activities - include who was involved and what they talked about]
-            • [Specific reactions, decisions, or responses people had - explain the context]
-            • [Notable quotes or memorable moments - provide enough context to understand why it was interesting]
+            • [Detailed summary of main topics, discussions, or activities - ALWAYS name who was involved and what they specifically talked about]
+            • [Specific reactions, decisions, or responses people had - ALWAYS mention who reacted and explain the context]
+            • [Notable quotes or memorable moments - ALWAYS say who said what and provide enough context to understand why it was interesting]
 
             **Notable Moments:**
-            • [Detailed explanation of any debates, discussions, or interesting conversations - who participated and what the topic was]
-            • [Funny or noteworthy moments with enough context to understand what happened]
+            • [Detailed explanation of any debates, discussions, or interesting conversations - ALWAYS name who participated and what the topic was]
+            • [Funny or noteworthy moments with enough context - ALWAYS mention who was involved in what happened]
 
             **Key Highlights:**
-            • [Most important or interesting moments with full context - explain why it was significant]
+            • [Most important or interesting moments with full context - ALWAYS name the people involved and explain why it was significant]
 
-            Keep it casual and friendly, focus on what actually happened, and aim for 200-250 words total. 
+            Keep it casual and friendly, focus on what actually happened, and aim for 200-250 words total. Remember: ALWAYS use actual usernames, never generic terms like "someone" or "a member".
 
             IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
 
