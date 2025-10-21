@@ -327,7 +327,19 @@ class ConversationSummarizer:
             prompt = f"""
             Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about. Make each bullet point detailed enough to give good context about what happened.
 
-            CRITICAL: Always use specific usernames when mentioning people. Never say "a member", "someone", "a user", or "the group" - always name the actual person who said or did something. This is very important for personalized summaries.
+            ABSOLUTELY CRITICAL - NO EXCEPTIONS: You MUST use specific usernames from the conversation. I will reject any summary that uses vague terms.
+
+            FORBIDDEN WORDS/PHRASES - DO NOT USE:
+            - "someone" 
+            - "a member"
+            - "a user" 
+            - "the group"
+            - "they"
+            - "one person"
+            - "another user"
+            - "others"
+
+            REQUIRED: If John talked to Mary about books, write "John talked to Mary about books" NOT "someone talked to another person about books"
 
             FORMAT: Use bullet points (•) for easy reading. Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
@@ -343,7 +355,9 @@ class ConversationSummarizer:
             **Key Highlights:**
             • [Most important or interesting moments with full context - ALWAYS name the people involved and explain why it was significant]
 
-            Keep it casual and friendly, focus on what actually happened, and aim for 200-250 words total. Remember: ALWAYS use actual usernames, never generic terms like "someone" or "a member".
+            Keep it casual and friendly, focus on what actually happened, and aim for 200-250 words total. 
+
+            FINAL CHECK: Before submitting your summary, scan through it and replace ANY instance of "someone", "a member", "they", etc. with the actual username from the conversation.
 
             IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
 
