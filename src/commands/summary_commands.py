@@ -321,13 +321,17 @@ class SummaryCommands(commands.Cog):
     @app_commands.command(name='preview_summary', description='Generate a summary and choose where to send it')
     @app_commands.describe(
         channel='Channel to summarize (defaults to current channel)',
-        hours='Number of hours to look back (default: 24, max: 168)'
+        hours_back='How many hours back to start from (default: 0 = now, e.g., 2 = start 2 hours ago)',
+        hours_duration='How many hours to include from the start point (default: 24, max: 168)',
+        simple_hours='Simple mode: just specify hours back from now (overrides other time settings)'
     )
     async def preview_summary(
         self, 
         interaction: discord.Interaction, 
         channel: discord.TextChannel = None, 
-        hours: int = 24
+        hours_back: int = 0,
+        hours_duration: int = 24,
+        simple_hours: int = None
     ):
         """Generate a summary preview with options to send it different places"""
         if not interaction.user.guild_permissions.manage_messages:
@@ -337,21 +341,43 @@ class SummaryCommands(commands.Cog):
         if channel is None:
             channel = interaction.channel
         
-        if hours > 168:  # Limit to 1 week
-            await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
-            return
+        # Handle simple mode or validate complex mode
+        if simple_hours is not None:
+            if simple_hours > 168:
+                await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
+                return
+            hours_back = 0
+            hours_duration = simple_hours
+            time_desc = f"last {simple_hours} hours"
+        else:
+            if hours_duration > 168:
+                await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
+                return
+            if hours_back < 0:
+                await interaction.response.send_message("❌ hours_back cannot be negative", ephemeral=True)
+                return
+            
+            if hours_back == 0:
+                time_desc = f"last {hours_duration} hours"
+            else:
+                end_time_desc = f"{hours_back} hours ago"
+                start_time_desc = f"{hours_back + hours_duration} hours ago"
+                time_desc = f"from {start_time_desc} to {end_time_desc}"
         
-        await interaction.response.send_message(f"🔄 Generating summary preview for {channel.mention} (last {hours} hours)...", ephemeral=True)
+        await interaction.response.send_message(f"🔄 Generating summary preview for {channel.mention} ({time_desc})...", ephemeral=True)
         
         try:
-            # Collect messages from the specified timeframe
+            # Calculate time range
             current_time = datetime.now(timezone.utc)
-            cutoff_time = current_time - timedelta(hours=hours)
+            end_time = current_time - timedelta(hours=hours_back)
+            start_time = current_time - timedelta(hours=hours_back + hours_duration)
+            
             messages = []
             
             total_messages = 0
             bot_messages = 0
-            async for message in channel.history(after=cutoff_time, limit=1000):
+            # Collect messages in the specified time range
+            async for message in channel.history(before=end_time, after=start_time, limit=1000):
                 total_messages += 1
                 if message.author.bot:
                     bot_messages += 1
@@ -359,7 +385,7 @@ class SummaryCommands(commands.Cog):
                     messages.append(message)
             
             if not messages:
-                await interaction.followup.send(f"❌ No messages found in {channel.mention} for the last {hours} hours", ephemeral=True)
+                await interaction.followup.send(f"❌ No messages found in {channel.mention} for {time_desc}", ephemeral=True)
                 return
             
             # Generate summary
@@ -389,14 +415,14 @@ class SummaryCommands(commands.Cog):
             
             embed.add_field(
                 name="📊 Stats",
-                value=f"**Messages:** {len(messages)}\n**Timeframe:** Last {hours} hours",
+                value=f"**Messages:** {len(messages)}\n**Timeframe:** {time_desc}",
                 inline=True
             )
             
             embed.set_footer(text="Choose where to send this summary:")
             
             # Create view with buttons
-            view = SummaryDestinationView(embed, channel, len(messages), hours)
+            view = SummaryDestinationView(embed, channel, len(messages), hours_duration, time_desc)
             
             await interaction.followup.send(embed=embed, view=view, ephemeral=True)
             
@@ -408,12 +434,13 @@ class SummaryCommands(commands.Cog):
 class SummaryDestinationView(discord.ui.View):
     """View with buttons to choose where to send the summary"""
     
-    def __init__(self, summary_embed: discord.Embed, channel: discord.TextChannel, message_count: int, hours: int):
+    def __init__(self, summary_embed: discord.Embed, channel: discord.TextChannel, message_count: int, hours: int, time_desc: str = None):
         super().__init__(timeout=300)  # 5 minute timeout
         self.summary_embed = summary_embed
         self.channel = channel
         self.message_count = message_count
         self.hours = hours
+        self.time_desc = time_desc or f"Last {hours} hours"
         self.original_summary = self._extract_summary_text(summary_embed)
     
     def _extract_summary_text(self, embed):
@@ -453,7 +480,7 @@ class SummaryDestinationView(discord.ui.View):
         # Re-add stats field
         self.summary_embed.add_field(
             name="📊 Stats",
-            value=f"**Messages:** {self.message_count}\n**Timeframe:** Last {self.hours} hours",
+            value=f"**Messages:** {self.message_count}\n**Timeframe:** {self.time_desc}",
             inline=True
         )
     
@@ -483,7 +510,7 @@ class SummaryDestinationView(discord.ui.View):
             
             public_embed.add_field(
                 name="Timeframe",
-                value=f"Last {self.hours} hours",
+                value=self.time_desc,
                 inline=True
             )
             
@@ -534,7 +561,7 @@ class SummaryDestinationView(discord.ui.View):
             
             dm_embed.add_field(
                 name="⏰ Timeframe", 
-                value=f"Last {self.hours} hours",
+                value=self.time_desc,
                 inline=True
             )
             
