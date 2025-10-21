@@ -259,8 +259,8 @@ class ConversationSummarizer:
             # Handle spoilers - replace with generic text to avoid spoiling in summary
             content = re.sub(r'\|\|(.+?)\|\|', '[SPOILER CONTENT]', content)
             
-            # Remove mentions and replace with names
-            content = re.sub(r'<@!?(\d+)>', lambda m: f"@{message.guild.get_member(int(m.group(1))).display_name if message.guild.get_member(int(m.group(1))) else 'user'}", content)
+            # Remove mentions and replace with names (without @ symbol)
+            content = re.sub(r'<@!?(\d+)>', lambda m: f"{message.guild.get_member(int(m.group(1))).display_name if message.guild.get_member(int(m.group(1))) else 'user'}", content)
             
             # Remove channel mentions
             content = re.sub(r'<#(\d+)>', lambda m: f"#{message.guild.get_channel(int(m.group(1))).name if message.guild.get_channel(int(m.group(1))) else 'channel'}", content)
@@ -340,6 +340,8 @@ class ConversationSummarizer:
             - "others"
 
             REQUIRED: If John talked to Mary about books, write "John talked to Mary about books" NOT "someone talked to another person about books"
+            
+            USERNAME FORMAT: Use plain usernames without @ symbols. Write "Emma said" NOT "@Emma said"
 
             FORMAT: Use bullet points (•) for easy reading. Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
