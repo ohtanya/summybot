@@ -74,118 +74,96 @@ class ConversationSummarizer:
     
     def _format_usernames_with_colors(self, text: str, participants: List[str]) -> str:
         """Apply emoji and bold formatting to usernames in the text"""
-        # Define emoji mappings for specific users
+        # Define emoji mappings for specific users (simplified - one emoji each)
         user_emojis = {
-            'TantalizingTangerine': '🍊',    # Orange emoji
-            'annbland': '🍄',                # Red heart emoji
-            'HelpfulKitten': '🐈‍⬛',           # Black cat emoji  
-            'Emma': '🩷',                    # Pink heart emoji
-            'Theris Valayrin': '🖤',         # Black heart emoji
-            'doobiegirl': '🩵',              # Blue heart emoji
-            'Matt': '🟦',                    # Blue circle emoji
-            'liliesanddaisies': '🌹',        # Rose emoji
-            '🌹 liliesanddaisies 🌻🌼': '🌹', # Rose emoji (decorated name)
-            'lilies': '🌹',                  # Rose emoji (partial match)
-            'daisies': '🌹',                 # Rose emoji (partial match)
-            'myxdvz': '🐨',                  # Diamond emoji
-            'bee!': '🐝',                     # Bee emoji
-            'bluecupgreenspoon': '🦋',       # Butterfly emoji
+            'TantalizingTangerine': '🍊',
+            'annbland': '🍄',
+            'HelpfulKitten': '🐈‍⬛',
+            'Emma': '🩷',
+            'Theris Valayrin': '🖤',
+            'doobiegirl': '🩵',
+            'Matt': '🟦',
+            'liliesanddaisies': '🌹',
+            'myxdvz': '🐨',
+            'bee!': '🐝',
+            'bluecupgreenspoon': '🦋',
         }
         
         formatted_text = text
         
-        # Debug logging to see what participants we're working with
-        print(f"DEBUG: Participants found: {participants}")
+        # First, clean any existing emoji formatting to prevent duplicates
+        import re
+        # Remove any existing emoji + bold patterns
+        emoji_pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋]+\s*\*\*([^*]+)\*\*'
+        formatted_text = re.sub(emoji_pattern, r'\1', formatted_text)
         
-        # First pass: Handle participants from the actual conversation
-        participant_matches = {}
+        # Single pass: Format each participant exactly once
+        formatted_participants = set()  # Track what we've already formatted
+        
         for participant in participants:
-            print(f"DEBUG: Processing participant: '{participant}'")
-            
-            # Check if this user has a specific emoji assigned (exact match first)
+            # Skip if we've already formatted this participant
+            if participant in formatted_participants:
+                continue
+                
+            # Find matching emoji (try exact match first, then case-insensitive)
             emoji = None
-            matched_key = None
+            participant_lower = participant.lower()
             
-            # First try exact match
             if participant in user_emojis:
                 emoji = user_emojis[participant]
-                matched_key = participant
-                print(f"DEBUG: Exact match found for '{participant}' -> {emoji}")
             else:
-                # Try various matching strategies
+                # Try case-insensitive and partial matching
                 for username, user_emoji in user_emojis.items():
-                    # Extract core username by removing common emoji decorations
-                    import re
-                    core_username = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋\s]+', '', username).strip()
-                    if not core_username:  # If regex removed everything, use original
-                        core_username = username
-                    
-                    # Strategy 1: Exact match
-                    if username == participant:
+                    if (username.lower() == participant_lower or 
+                        username.lower() in participant_lower or 
+                        participant_lower in username.lower()):
                         emoji = user_emoji
-                        matched_key = username
-                        print(f"DEBUG: Exact match: '{participant}' == '{username}' -> {emoji}")
-                        break
-                    
-                    # Strategy 2: Core username appears in participant (case-insensitive)
-                    elif core_username.lower() in participant.lower():
-                        emoji = user_emoji
-                        matched_key = username
-                        print(f"DEBUG: Core match: '{participant}' contains '{core_username}' -> {emoji}")
-                        break
-                    
-                    # Strategy 3: Participant appears in mapping username (for decorated mappings)
-                    elif participant.lower() in username.lower():
-                        emoji = user_emoji
-                        matched_key = username
-                        print(f"DEBUG: Reverse match: '{username}' contains '{participant}' -> {emoji}")
-                        break
-                    
-                    # Strategy 4: Fuzzy partial matching (at least 4 chars in common)
-                    elif len(core_username) >= 4 and core_username.lower()[:4] in participant.lower():
-                        emoji = user_emoji
-                        matched_key = username
-                        print(f"DEBUG: Fuzzy match: '{participant}' starts with '{core_username[:4]}' -> {emoji}")
                         break
             
+            # Apply formatting if we found an emoji
             if emoji:
-                participant_matches[participant] = f"{emoji} **{participant}**"
-                print(f"DEBUG: Storing match for '{participant}' -> '{participant_matches[participant]}'")
-        
-        # Second pass: Simple replacement for known usernames that might not be in participants
-        # Only replace if not already formatted with emoji
-        import re
-        for username, user_emoji in user_emojis.items():
-            # Extract core username
-            core_username = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋\s]+', '', username).strip()
-            if not core_username:
-                core_username = username
-            
-            # Only try a few key variations to avoid conflicts
-            username_forms = [core_username, core_username.upper(), core_username.lower()]
-            
-            for form in username_forms:
-                if len(form) >= 4:  # Only match longer usernames to avoid false matches
-                    # Check if this form exists in text and is not already formatted
-                    if form in formatted_text and f"{user_emoji} **" not in formatted_text:
-                        # Simple string replacement - only once
-                        formatted_text = formatted_text.replace(form, f"{user_emoji} **{form}**", 1)
-                        print(f"DEBUG: Simple replacement of '{form}' with '{user_emoji} **{form}**'")
-                        break  # Only do one replacement per username to avoid multiples
-        
-        # Third pass: Apply participant matches (these take priority and override previous matches)
-        for participant, formatted_name in participant_matches.items():
-            # Remove any existing emoji formatting for this participant first
-            import re
-            # Remove patterns like "🍊 **participant**" or multiple emojis
-            pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋]+\s*\*\*' + re.escape(participant) + r'\*\*'
-            formatted_text = re.sub(pattern, participant, formatted_text, flags=re.IGNORECASE)
-            
-            # Now apply the correct formatting
-            formatted_text = formatted_text.replace(participant, formatted_name)
-            print(f"DEBUG: Applied final participant formatting: '{participant}' -> '{formatted_name}'")
+                # Handle both plain text and already bold text
+                # Pattern 1: **participant** -> emoji **participant**
+                bold_pattern = r'\*\*' + re.escape(participant) + r'\*\*'
+                if re.search(bold_pattern, formatted_text):
+                    formatted_text = re.sub(bold_pattern, f"{emoji} **{participant}**", formatted_text)
+                    formatted_participants.add(participant)
+                # Pattern 2: plain participant -> emoji **participant**
+                elif participant in formatted_text:
+                    plain_pattern = r'\b' + re.escape(participant) + r'\b'
+                    formatted_text = re.sub(plain_pattern, f"{emoji} **{participant}**", formatted_text)
+                    formatted_participants.add(participant)
         
         return formatted_text
+    
+    def _clean_summary_text(self, summary: str, participants: List[str]) -> str:
+        """Clean up summary text to fix common AI formatting issues"""
+        cleaned = summary
+        
+        # Fix all-caps usernames - convert them back to proper case
+        for participant in participants:
+            # Replace ALL CAPS version with proper case
+            caps_version = participant.upper()
+            if caps_version in cleaned and caps_version != participant:
+                cleaned = cleaned.replace(caps_version, participant)
+        
+        # Fix broken bold formatting (missing opening **)
+        import re
+        # Pattern: find text ending with ** that might be missing opening **
+        # Look for word boundaries followed by text ending in **
+        broken_bold_pattern = r'\b([A-Za-z0-9_]+)\*\*(?!\*)'
+        
+        def fix_bold(match):
+            word = match.group(1)
+            # Only fix if it looks like a username (check against participants)
+            for participant in participants:
+                if participant.lower() == word.lower():
+                    return f"**{participant}**"
+            return match.group(0)  # Return unchanged if not a participant
+        
+        cleaned = re.sub(broken_bold_pattern, fix_bold, cleaned)
+        
+        return cleaned
     
     async def summarize_conversations(self, messages: List[discord.Message], custom_prompt: str = None) -> str:
         """Generate a summary from a list of Discord messages"""
@@ -284,8 +262,11 @@ class ConversationSummarizer:
         # Format the channel summary with better readability
         participants = list(conv_data['participants'])  # Show all participants
         
+        # Clean up the summary before applying formatting
+        cleaned_summary = self._clean_summary_text(summary, participants)
+        
         # Apply color coding and bold formatting to usernames
-        formatted_summary = self._format_usernames_with_colors(summary, participants)
+        formatted_summary = self._format_usernames_with_colors(cleaned_summary, participants)
         
         # Create a more readable summary format
         final_summary = f"""**📍 #{channel_name}**
@@ -327,32 +308,23 @@ class ConversationSummarizer:
     
     async def _generate_summary(self, text: str, custom_prompt: str = None) -> Optional[str]:
         """Generate summary using available method"""
-        print(f"DEBUG: Generating summary for text length: {len(text)}")
-        
         # Try OpenAI first if available
         if self.openai_client:
             try:
-                print("DEBUG: Attempting OpenAI summarization")
                 result = await self._summarize_with_openai(text, custom_prompt)
-                print(f"DEBUG: OpenAI summary successful: {len(result)} characters")
                 return result
             except Exception as e:
-                print(f"DEBUG: OpenAI summarization failed: {e}")
                 logger.warning(f"OpenAI summarization failed: {e}")
         
         # Fallback to local summarizer
         if self.local_summarizer:
             try:
-                print("DEBUG: Attempting local transformer summarization")
                 result = await self._summarize_with_transformers(text)
-                print(f"DEBUG: Local transformer summary successful: {len(result)} characters")
                 return result
             except Exception as e:
-                print(f"DEBUG: Local transformer summarization failed: {e}")
                 logger.warning(f"Local summarization failed: {e}")
         
         # Last resort: simple extractive summary
-        print("DEBUG: Using fallback extractive summary")
         return self._simple_extractive_summary(text)
     
     async def _summarize_with_openai(self, text: str, custom_prompt: str = None) -> str:
@@ -393,7 +365,7 @@ class ConversationSummarizer:
             
             USERNAME FORMAT: Use plain usernames without @ symbols. Write "Emma said" NOT "@Emma said"
             
-            CAPITALIZATION: Keep usernames EXACTLY as they appear in the conversation. Do NOT capitalize them. If the conversation shows "annbland" write "annbland", NOT "Annbland". If it shows "liliesanddaisies" write "liliesanddaisies", NOT "Liliesanddaisies".
+            CAPITALIZATION: Keep usernames EXACTLY as they appear in the conversation. Use lowercase usernames. Do NOT use ALL CAPS. If the conversation shows "annbland" write "annbland", NOT "ANNBLAND" or "Annbland". If it shows "liliesanddaisies" write "liliesanddaisies", NOT "LILIESANDDAISIES".
 
             FORMAT: Use bullet points (•) for easy reading. Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
