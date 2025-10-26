@@ -93,9 +93,14 @@ class ConversationSummarizer:
         
         # First, clean any existing emoji formatting to prevent duplicates
         import re
-        # Remove any existing emoji + bold patterns
-        emoji_pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋]+\s*\*\*([^*]+)\*\*'
-        formatted_text = re.sub(emoji_pattern, r'\1', formatted_text)
+        # Remove any existing emoji patterns (both with and without bold)
+        # Pattern 1: emoji + space + **username** -> username
+        emoji_bold_pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋]+\s*\*\*([^*]+)\*\*'
+        formatted_text = re.sub(emoji_bold_pattern, r'\1', formatted_text)
+        
+        # Pattern 2: emoji + space + username (no bold) -> username
+        emoji_plain_pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋]+\s+([A-Za-z0-9_!]+)'
+        formatted_text = re.sub(emoji_plain_pattern, r'\1', formatted_text)
         
         # Single pass: Format each participant exactly once
         formatted_participants = set()  # Track what we've already formatted
