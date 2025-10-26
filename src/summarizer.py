@@ -389,6 +389,8 @@ class ConversationSummarizer:
             REQUIRED: If John talked to Mary about books, write "John talked to Mary about books" NOT "someone talked to another person about books"
             
             USERNAME FORMAT: Use plain usernames without @ symbols. Write "Emma said" NOT "@Emma said"
+            
+            CAPITALIZATION: Keep usernames EXACTLY as they appear in the conversation. Do NOT capitalize them. If the conversation shows "annbland" write "annbland", NOT "Annbland". If it shows "liliesanddaisies" write "liliesanddaisies", NOT "Liliesanddaisies".
 
             FORMAT: Use bullet points (•) for easy reading. Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
