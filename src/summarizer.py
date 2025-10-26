@@ -152,8 +152,8 @@ class ConversationSummarizer:
                 participant_matches[participant] = f"{emoji} **{participant}**"
                 print(f"DEBUG: Storing match for '{participant}' -> '{participant_matches[participant]}'")
         
-        # Second pass: Replace all known usernames in text (case-insensitive)
-        # This catches AI-generated names that might not match participant list exactly
+        # Second pass: Simple replacement for known usernames that might not be in participants
+        # Only replace if not already formatted with emoji
         import re
         for username, user_emoji in user_emojis.items():
             # Extract core username
@@ -161,26 +161,29 @@ class ConversationSummarizer:
             if not core_username:
                 core_username = username
             
-            # Try to replace various forms of the username in the text
-            username_forms = [username, core_username, core_username.capitalize(), core_username.lower(), core_username.upper()]
+            # Only try a few key variations to avoid conflicts
+            username_forms = [core_username, core_username.upper(), core_username.lower()]
             
             for form in username_forms:
-                if len(form) >= 3:  # Avoid matching very short strings
-                    # Use word boundary regex for more precise matching
-                    pattern = r'\b' + re.escape(form) + r'\b'
-                    if re.search(pattern, formatted_text, re.IGNORECASE):
-                        replacement = f"{user_emoji} **{form}**"
-                        formatted_text = re.sub(pattern, replacement, formatted_text, flags=re.IGNORECASE)
-                        print(f"DEBUG: Replaced '{form}' with '{replacement}' in text")
+                if len(form) >= 4:  # Only match longer usernames to avoid false matches
+                    # Check if this form exists in text and is not already formatted
+                    if form in formatted_text and f"{user_emoji} **" not in formatted_text:
+                        # Simple string replacement - only once
+                        formatted_text = formatted_text.replace(form, f"{user_emoji} **{form}**", 1)
+                        print(f"DEBUG: Simple replacement of '{form}' with '{user_emoji} **{form}**'")
+                        break  # Only do one replacement per username to avoid multiples
         
-        # Third pass: Apply participant matches (these take priority over general matches)
+        # Third pass: Apply participant matches (these take priority and override previous matches)
         for participant, formatted_name in participant_matches.items():
+            # Remove any existing emoji formatting for this participant first
+            import re
+            # Remove patterns like "🍊 **participant**" or multiple emojis
+            pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋]+\s*\*\*' + re.escape(participant) + r'\*\*'
+            formatted_text = re.sub(pattern, participant, formatted_text, flags=re.IGNORECASE)
+            
+            # Now apply the correct formatting
             formatted_text = formatted_text.replace(participant, formatted_name)
-            # Also replace variations
-            for variation in [participant.lower(), participant.upper(), participant.capitalize()]:
-                if variation != participant and variation in formatted_text:
-                    formatted_text = formatted_text.replace(variation, formatted_name)
-                    print(f"DEBUG: Replaced participant variation '{variation}' with '{formatted_name}'")
+            print(f"DEBUG: Applied final participant formatting: '{participant}' -> '{formatted_name}'")
         
         return formatted_text
     
