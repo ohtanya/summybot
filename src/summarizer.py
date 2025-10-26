@@ -85,6 +85,8 @@ class ConversationSummarizer:
             'Matt': '🟦',                    # Blue circle emoji
             'liliesanddaisies': '🌹',        # Rose emoji
             '🌹 liliesanddaisies 🌻🌼': '🌹', # Rose emoji (decorated name)
+            'lilies': '🌹',                  # Rose emoji (partial match)
+            'daisies': '🌹',                 # Rose emoji (partial match)
             'myxdvz': '🐨',                  # Diamond emoji
             'bee!': '🐝',                     # Bee emoji
             'bluecupgreenspoon': '🦋',       # Butterfly emoji
@@ -108,19 +110,40 @@ class ConversationSummarizer:
                 matched_key = participant
                 print(f"DEBUG: Exact match found for '{participant}' -> {emoji}")
             else:
-                # Try partial matching for cases like "🌹 liliesanddaisies 🌻🌼"
+                # Try various matching strategies
                 for username, user_emoji in user_emojis.items():
-                    # Check if the participant contains the username (for decorated names)
-                    if username in participant or participant in username:
+                    # Extract core username by removing common emoji decorations
+                    import re
+                    core_username = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋\s]+', '', username).strip()
+                    if not core_username:  # If regex removed everything, use original
+                        core_username = username
+                    
+                    # Strategy 1: Exact match
+                    if username == participant:
                         emoji = user_emoji
                         matched_key = username
-                        print(f"DEBUG: Partial match found: '{participant}' matches '{username}' -> {emoji}")
+                        print(f"DEBUG: Exact match: '{participant}' == '{username}' -> {emoji}")
                         break
-                    # Also try case-insensitive matching
-                    elif username.lower() == participant.lower():
+                    
+                    # Strategy 2: Core username appears in participant (case-insensitive)
+                    elif core_username.lower() in participant.lower():
                         emoji = user_emoji
                         matched_key = username
-                        print(f"DEBUG: Case-insensitive match found: '{participant}' matches '{username}' -> {emoji}")
+                        print(f"DEBUG: Core match: '{participant}' contains '{core_username}' -> {emoji}")
+                        break
+                    
+                    # Strategy 3: Participant appears in mapping username (for decorated mappings)
+                    elif participant.lower() in username.lower():
+                        emoji = user_emoji
+                        matched_key = username
+                        print(f"DEBUG: Reverse match: '{username}' contains '{participant}' -> {emoji}")
+                        break
+                    
+                    # Strategy 4: Fuzzy partial matching (at least 4 chars in common)
+                    elif len(core_username) >= 4 and core_username.lower()[:4] in participant.lower():
+                        emoji = user_emoji
+                        matched_key = username
+                        print(f"DEBUG: Fuzzy match: '{participant}' starts with '{core_username[:4]}' -> {emoji}")
                         break
             
             if emoji:
