@@ -97,6 +97,8 @@ class ConversationSummarizer:
         # Debug logging to see what participants we're working with
         print(f"DEBUG: Participants found: {participants}")
         
+        # First pass: Handle participants from the actual conversation
+        participant_matches = {}
         for participant in participants:
             print(f"DEBUG: Processing participant: '{participant}'")
             
@@ -147,16 +149,38 @@ class ConversationSummarizer:
                         break
             
             if emoji:
-                # Replace with emoji and bolded version
-                formatted_name = f"{emoji} **{participant}**"
-                print(f"DEBUG: Formatting '{participant}' as '{formatted_name}'")
-            else:
-                # Default: just bold for users without specific emojis
-                formatted_name = f"**{participant}**"
-                print(f"DEBUG: No emoji found for '{participant}', using bold only")
+                participant_matches[participant] = f"{emoji} **{participant}**"
+                print(f"DEBUG: Storing match for '{participant}' -> '{participant_matches[participant]}'")
+        
+        # Second pass: Replace all known usernames in text (case-insensitive)
+        # This catches AI-generated names that might not match participant list exactly
+        import re
+        for username, user_emoji in user_emojis.items():
+            # Extract core username
+            core_username = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋\s]+', '', username).strip()
+            if not core_username:
+                core_username = username
             
-            # Replace all instances of the username (case-sensitive)
+            # Try to replace various forms of the username in the text
+            username_forms = [username, core_username, core_username.capitalize(), core_username.lower(), core_username.upper()]
+            
+            for form in username_forms:
+                if len(form) >= 3:  # Avoid matching very short strings
+                    # Use word boundary regex for more precise matching
+                    pattern = r'\b' + re.escape(form) + r'\b'
+                    if re.search(pattern, formatted_text, re.IGNORECASE):
+                        replacement = f"{user_emoji} **{form}**"
+                        formatted_text = re.sub(pattern, replacement, formatted_text, flags=re.IGNORECASE)
+                        print(f"DEBUG: Replaced '{form}' with '{replacement}' in text")
+        
+        # Third pass: Apply participant matches (these take priority over general matches)
+        for participant, formatted_name in participant_matches.items():
             formatted_text = formatted_text.replace(participant, formatted_name)
+            # Also replace variations
+            for variation in [participant.lower(), participant.upper(), participant.capitalize()]:
+                if variation != participant and variation in formatted_text:
+                    formatted_text = formatted_text.replace(variation, formatted_name)
+                    print(f"DEBUG: Replaced participant variation '{variation}' with '{formatted_name}'")
         
         return formatted_text
     
