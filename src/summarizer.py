@@ -84,6 +84,7 @@ class ConversationSummarizer:
             'doobiegirl': '🩵',
             'Matt': '🟦',
             'liliesanddaisies': '🌹',
+            '🌹 liliesanddaisies 🌻🌼': '🌹',  # Discord display name with decorations
             'myxdvz': '🐨',
             'bee!': '🐝',
             'bluecupgreenspoon': '🦋',
@@ -110,33 +111,68 @@ class ConversationSummarizer:
             if participant in formatted_participants:
                 continue
                 
-            # Find matching emoji (try exact match first, then case-insensitive)
+            # Extract core username from decorated Discord names
+            # Remove common emoji decorations to get the base username
+            core_participant = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋\s]+', '', participant).strip()
+            if not core_participant:
+                core_participant = participant
+                
+            # Find matching emoji (try exact matches first, then partial)
             emoji = None
-            participant_lower = participant.lower()
             
+            # Try exact match with full participant name
             if participant in user_emojis:
                 emoji = user_emojis[participant]
+            # Try exact match with core username
+            elif core_participant in user_emojis:
+                emoji = user_emojis[core_participant]
             else:
-                # Try case-insensitive and partial matching
+                # Try partial matching with both full and core names
+                participant_lower = participant.lower()
+                core_lower = core_participant.lower()
+                
                 for username, user_emoji in user_emojis.items():
-                    if (username.lower() == participant_lower or 
-                        username.lower() in participant_lower or 
-                        participant_lower in username.lower()):
+                    username_lower = username.lower()
+                    # Remove emojis from mapping username too for comparison
+                    core_username = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋\s]+', '', username).strip().lower()
+                    
+                    if (username_lower == participant_lower or 
+                        username_lower == core_lower or
+                        core_username == core_lower or
+                        (len(core_username) > 3 and core_username in core_lower) or
+                        (len(core_lower) > 3 and core_lower in core_username)):
                         emoji = user_emoji
                         break
             
             # Apply formatting if we found an emoji
             if emoji:
-                # Handle both plain text and already bold text
-                # Pattern 1: **participant** -> emoji **participant**
-                bold_pattern = r'\*\*' + re.escape(participant) + r'\*\*'
-                if re.search(bold_pattern, formatted_text):
-                    formatted_text = re.sub(bold_pattern, f"{emoji} **{participant}**", formatted_text)
-                    formatted_participants.add(participant)
-                # Pattern 2: plain participant -> emoji **participant**
-                elif participant in formatted_text:
-                    plain_pattern = r'\b' + re.escape(participant) + r'\b'
-                    formatted_text = re.sub(plain_pattern, f"{emoji} **{participant}**", formatted_text)
+                # Try to format both the full participant name and core username
+                names_to_try = [participant]
+                if core_participant != participant:
+                    names_to_try.append(core_participant)
+                
+                formatted_any = False
+                for name_to_format in names_to_try:
+                    # Skip if this name is already formatted
+                    if name_to_format in formatted_participants:
+                        continue
+                        
+                    # Pattern 1: **name** -> emoji **name**
+                    bold_pattern = r'\*\*' + re.escape(name_to_format) + r'\*\*'
+                    if re.search(bold_pattern, formatted_text):
+                        formatted_text = re.sub(bold_pattern, f"{emoji} **{name_to_format}**", formatted_text)
+                        formatted_participants.add(name_to_format)
+                        formatted_any = True
+                    # Pattern 2: plain name -> emoji **name**
+                    elif name_to_format in formatted_text:
+                        plain_pattern = r'\b' + re.escape(name_to_format) + r'\b'
+                        if re.search(plain_pattern, formatted_text):
+                            formatted_text = re.sub(plain_pattern, f"{emoji} **{name_to_format}**", formatted_text)
+                            formatted_participants.add(name_to_format)
+                            formatted_any = True
+                
+                # Mark the participant as processed regardless
+                if formatted_any:
                     formatted_participants.add(participant)
         
         return formatted_text
