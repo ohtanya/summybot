@@ -32,9 +32,6 @@ class SummaryCommands(commands.Cog):
         hours: int = 24
     ):
         """Generate a summary and send it privately to the user's DMs"""
-        if not interaction.user.guild_permissions.manage_messages:
-            await interaction.response.send_message("❌ You need 'Manage Messages' permission to use this command.", ephemeral=True)
-            return
             
         if channel is None:
             channel = interaction.channel
@@ -141,9 +138,6 @@ class SummaryCommands(commands.Cog):
         hours: int = 24
     ):
         """Generate a manual summary for a channel"""
-        if not interaction.user.guild_permissions.manage_messages:
-            await interaction.response.send_message("❌ You need 'Manage Messages' permission to use this command.", ephemeral=True)
-            return
             
         if channel is None:
             channel = interaction.channel
@@ -256,9 +250,6 @@ class SummaryCommands(commands.Cog):
         hours: int = 24
     ):
         """Generate a summary focused on a specific question or topic"""
-        if not interaction.user.guild_permissions.manage_messages:
-            await interaction.response.send_message("❌ You need 'Manage Messages' permission to use this command.", ephemeral=True)
-            return
             
         if channel is None:
             channel = interaction.channel
@@ -334,9 +325,6 @@ class SummaryCommands(commands.Cog):
         simple_hours: int = None
     ):
         """Generate a summary preview with options to send it different places"""
-        if not interaction.user.guild_permissions.manage_messages:
-            await interaction.response.send_message("❌ You need 'Manage Messages' permission to use this command.", ephemeral=True)
-            return
             
         if channel is None:
             channel = interaction.channel

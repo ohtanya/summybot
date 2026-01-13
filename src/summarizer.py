@@ -82,7 +82,7 @@ class ConversationSummarizer:
             'Emma': '🩷',
             'Theris Valayrin': '🖤',
             'doobiegirl': '🩵',
-            'Matt': '🟦',
+            'CleverJoey': '🦘',
             'liliesanddaisies': '🌹',
             '🌹 liliesanddaisies 🌻🌼': '🌹',  # Discord display name with decorations
             'myxdvz': '🐨',
