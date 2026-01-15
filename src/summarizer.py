@@ -113,11 +113,11 @@ class ConversationSummarizer:
         import re
         # Remove any existing emoji patterns (both with and without bold)
         # Pattern 1: emoji + space + **username** -> username
-        emoji_bold_pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋]+\s*\*\*([^*]+)\*\*'
+        emoji_bold_pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋✨]+\s*\*\*([^*]+)\*\*'
         formatted_text = re.sub(emoji_bold_pattern, r'\1', formatted_text)
         
         # Pattern 2: emoji + space + username (no bold) -> username
-        emoji_plain_pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋]+\s+([A-Za-z0-9_!]+)'
+        emoji_plain_pattern = r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋✨]+\s+([A-Za-z0-9_!]+)'
         formatted_text = re.sub(emoji_plain_pattern, r'\1', formatted_text)
         
         # Single pass: Format each participant exactly once
@@ -130,7 +130,7 @@ class ConversationSummarizer:
                 
             # Extract core username from decorated Discord names
             # Remove common emoji decorations to get the base username
-            core_participant = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋\s]+', '', participant).strip()
+            core_participant = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋✨\s]+', '', participant).strip()
             if not core_participant:
                 core_participant = participant
                 
@@ -151,7 +151,7 @@ class ConversationSummarizer:
                 for username, user_emoji in user_emojis.items():
                     username_lower = username.lower()
                     # Remove emojis from mapping username too for comparison
-                    core_username = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋\s]+', '', username).strip().lower()
+                    core_username = re.sub(r'[🌹🌻🌼🍊🍄🐈‍⬛🩷🖤🩵🟦🐨🐝🦋✨\s]+', '', username).strip().lower()
                     
                     if (username_lower == participant_lower or 
                         username_lower == core_lower or
