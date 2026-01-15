@@ -461,6 +461,11 @@ class ConversationSummarizer:
 
             REQUIRED: If John talked to Mary about books, write "John talked to Mary about books" NOT "someone talked to another person about books"
             
+            CRITICAL MESSAGE ORDER: Messages are presented in chronological order (oldest to newest). When attributing actions, pay close attention to WHO said/did something FIRST and WHO responded AFTER. For example:
+            - If Alice mentions X, then Bob replies to Alice about X, Bob is RESPONDING to Alice's mention.
+            - If Alice shares a link, then Bob says "that didn't work", Bob is reacting to ALICE's link, not the other way around.
+            - The LAST person to mention something is usually the one providing the correction or alternative.
+            
             USERNAME FORMAT: Use plain usernames without @ symbols. Write "Emma said" NOT "@Emma said"
             
             CAPITALIZATION: Keep usernames EXACTLY as they appear in the conversation. Use lowercase usernames. Do NOT use ALL CAPS. If the conversation shows "annbland" write "annbland", NOT "ANNBLAND" or "Annbland". If it shows "liliesanddaisies" write "liliesanddaisies", NOT "LILIESANDDAISIES".
