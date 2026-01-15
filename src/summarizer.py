@@ -97,7 +97,7 @@ class ConversationSummarizer:
             '🌹 liliesanddaisies 🌻🌼': '🌹',  # Discord display name with decorations
             'myxdvz': '🐨',
             'bee!': '🐝',
-            'bluecupgreenspoon': '🦋',
+            'bluecupgreenspoon': '✨',
         }
         
         # Apply aliases to text by replacing original names with aliases
