@@ -318,6 +318,8 @@ class ConversationSummarizer:
         
         # Prepare text for summarization
         conversation_text = self._prepare_conversation_text(messages)
+        print(f"DEBUG _summarize_channel_conversations: #{channel_name} prepared {len(messages)} messages into {len(conversation_text)} chars")
+        print(f"DEBUG conversation_text preview: {conversation_text[:200]}...")
         
         if len(conversation_text) < 20:  # Skip very short conversations (was 100)
             logger.debug(f"Skipping #{channel_name}: conversation too short ({len(conversation_text)} chars, need at least 20)")
@@ -326,10 +328,13 @@ class ConversationSummarizer:
         logger.debug(f"Summarizing #{channel_name}: {len(messages)} messages, {len(conversation_text)} chars")
         
         # Generate summary using available method
+        print(f"DEBUG: Calling _generate_summary for #{channel_name} with {len(conversation_text)} chars")
         summary = await self._generate_summary(conversation_text, custom_prompt)
+        print(f"DEBUG: _generate_summary returned: {type(summary)} length {len(summary) if summary else 0}")
         
         if not summary:
             logger.debug(f"Failed to generate summary for #{channel_name}")
+            print(f"DEBUG: Summary is None/empty for #{channel_name}")
             return None
         
         # Format the channel summary with better readability
@@ -381,24 +386,34 @@ class ConversationSummarizer:
     
     async def _generate_summary(self, text: str, custom_prompt: str = None) -> Optional[str]:
         """Generate summary using available method"""
+        print(f"DEBUG _generate_summary: OpenAI available={bool(self.openai_client)}, Local summarizer={bool(self.local_summarizer)}, text length={len(text)}")
         # Try OpenAI first if available
         if self.openai_client:
             try:
+                print("DEBUG: Trying OpenAI summarization")
                 result = await self._summarize_with_openai(text, custom_prompt)
+                print(f"DEBUG: OpenAI returned {len(result) if result else 0} chars")
                 return result
             except Exception as e:
                 logger.warning(f"OpenAI summarization failed: {e}")
+                print(f"DEBUG: OpenAI failed with {e}")
         
         # Fallback to local summarizer
         if self.local_summarizer:
             try:
+                print("DEBUG: Trying local summarizer")
                 result = await self._summarize_with_transformers(text)
+                print(f"DEBUG: Local summarizer returned {len(result) if result else 0} chars")
                 return result
             except Exception as e:
                 logger.warning(f"Local summarization failed: {e}")
+                print(f"DEBUG: Local summarizer failed with {e}")
         
         # Last resort: simple extractive summary
-        return self._simple_extractive_summary(text)
+        print("DEBUG: Using simple extractive summary")
+        result = self._simple_extractive_summary(text)
+        print(f"DEBUG: Simple summary returned {len(result) if result else 0} chars")
+        return result
     
     async def _summarize_with_openai(self, text: str, custom_prompt: str = None) -> str:
         """Summarize using OpenAI API"""
