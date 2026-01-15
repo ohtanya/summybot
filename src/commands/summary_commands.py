@@ -131,7 +131,7 @@ class SummaryCommands(commands.Cog):
         channel='Channel to summarize (defaults to current channel)',
         hours_back='How many hours back to start from (default: 0 = now, e.g., 2 = start 2 hours ago)',
         hours_duration='How many hours to include from the start point (default: 24, max: 168)',
-        simple_hours='Simple mode: just specify hours back from now (overrides other time settings)'
+        hours='Simple mode: just specify hours back from now (overrides other time settings)'
     )
     async def slash_summary(
         self, 
@@ -139,7 +139,7 @@ class SummaryCommands(commands.Cog):
         channel: discord.TextChannel = None, 
         hours_back: int = 0,
         hours_duration: int = 24,
-        simple_hours: int = None
+        hours: int = None
     ):
         """Generate a summary for a channel and send it directly"""
             
@@ -147,13 +147,13 @@ class SummaryCommands(commands.Cog):
             channel = interaction.channel
         
         # Handle simple mode or validate complex mode
-        if simple_hours is not None:
-            if simple_hours > 168:
+        if hours is not None:
+            if hours > 168:
                 await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
                 return
             hours_back = 0
-            hours_duration = simple_hours
-            time_desc = f"last {simple_hours} hours"
+            hours_duration = hours
+            time_desc = f"last {hours} hours"
         else:
             if hours_duration > 168:
                 await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
@@ -321,7 +321,7 @@ class SummaryCommands(commands.Cog):
         channel='Channel to summarize (defaults to current channel)',
         hours_back='How many hours back to start from (default: 0 = now, e.g., 2 = start 2 hours ago)',
         hours_duration='How many hours to include from the start point (default: 24, max: 168)',
-        simple_hours='Simple mode: just specify hours back from now (overrides other time settings)'
+        hours='Simple mode: just specify hours back from now (overrides other time settings)'
     )
     async def preview_summary(
         self, 
@@ -329,7 +329,7 @@ class SummaryCommands(commands.Cog):
         channel: discord.TextChannel = None, 
         hours_back: int = 0,
         hours_duration: int = 24,
-        simple_hours: int = None
+        hours: int = None
     ):
         """Generate a summary preview with options to send it different places"""
             
@@ -337,13 +337,13 @@ class SummaryCommands(commands.Cog):
             channel = interaction.channel
         
         # Handle simple mode or validate complex mode
-        if simple_hours is not None:
-            if simple_hours > 168:
+        if hours is not None:
+            if hours > 168:
                 await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
                 return
             hours_back = 0
-            hours_duration = simple_hours
-            time_desc = f"last {simple_hours} hours"
+            hours_duration = hours
+            time_desc = f"last {hours} hours"
         else:
             if hours_duration > 168:
                 await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
