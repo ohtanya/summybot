@@ -74,6 +74,8 @@ class ConversationSummarizer:
     
     def _format_usernames_with_colors(self, text: str, participants: List[str]) -> str:
         """Apply emoji and bold formatting to usernames in the text"""
+        import re
+        
         # Define display name aliases for specific users
         username_aliases = {
             'TantalizingTangerine': 'naranga',
@@ -232,18 +234,24 @@ class ConversationSummarizer:
         
         # Group messages by channel and extract conversation threads
         conversations = self._group_messages_by_context(messages)
+        print(f"DEBUG summarize_conversations: Grouped {len(messages)} messages into {len(conversations)} conversations: {list(conversations.keys())}")
+        for ch, data in conversations.items():
+            print(f"DEBUG   Channel {ch}: {len(data['messages'])} messages, {len(data['participants'])} participants")
         
         # Generate summaries for each conversation thread
         summaries = []
         for channel_name, conv_data in conversations.items():
             try:
+                print(f"DEBUG: Summarizing channel {channel_name}")
                 channel_summary = await self._summarize_channel_conversations(
                     channel_name, conv_data, custom_prompt
                 )
+                print(f"DEBUG: Got channel summary for {channel_name}: {bool(channel_summary)}, length {len(channel_summary) if channel_summary else 0}")
                 if channel_summary:
                     summaries.append(channel_summary)
             except Exception as e:
                 logger.error(f"Error summarizing {channel_name}: {e}")
+                print(f"DEBUG: Exception in summarizing {channel_name}: {e}")
                 continue
         
         if not summaries:
