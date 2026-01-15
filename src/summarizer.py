@@ -472,7 +472,6 @@ class ConversationSummarizer:
 
             FORMAT: Use bullet points (•) for easy reading. Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
-            **What Went Down:**
             • [Detailed summary of main topics, discussions, or activities - ALWAYS name who was involved and what they specifically talked about]
             • [Specific reactions, decisions, or responses people had - ALWAYS mention who reacted and explain the context]
             • [Notable quotes or memorable moments - ALWAYS say who said what and provide enough context to understand why it was interesting]
