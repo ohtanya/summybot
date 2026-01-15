@@ -74,15 +74,23 @@ class ConversationSummarizer:
     
     def _format_usernames_with_colors(self, text: str, participants: List[str]) -> str:
         """Apply emoji and bold formatting to usernames in the text"""
+        # Define display name aliases for specific users
+        username_aliases = {
+            'TantalizingTangerine': 'naranga',
+            'CleverJoey': 'MandaPanda',
+        }
+        
         # Define emoji mappings for specific users (simplified - one emoji each)
         user_emojis = {
             'TantalizingTangerine': '🍊',
+            'naranga': '🍊',
             'annbland': '🍄',
             'HelpfulKitten': '🐈‍⬛',
             'Emma': '🩷',
             'Theris Valayrin': '🖤',
             'doobiegirl': '🩵',
             'CleverJoey': '🦘',
+            'MandaPanda': '🐼',
             'liliesanddaisies': '🌹',
             '🌹 liliesanddaisies 🌻🌼': '🌹',  # Discord display name with decorations
             'myxdvz': '🐨',
@@ -90,7 +98,14 @@ class ConversationSummarizer:
             'bluecupgreenspoon': '🦋',
         }
         
+        # Apply aliases to text by replacing original names with aliases
         formatted_text = text
+        for original_name, alias_name in username_aliases.items():
+            # Replace with word boundaries to avoid partial replacements
+            formatted_text = re.sub(r'\b' + re.escape(original_name) + r'\b', alias_name, formatted_text)
+        
+        # Update participants list with aliases for formatting
+        participants = [username_aliases.get(p, p) for p in participants]
         
         # First, clean any existing emoji formatting to prevent duplicates
         import re
@@ -253,7 +268,14 @@ class ConversationSummarizer:
             
             conv_data = conversations[channel_name]
             conv_data['messages'].append(message)
-            conv_data['participants'].add(message.author.display_name)
+            
+            # Apply username alias when adding participant
+            username_aliases = {
+                'TantalizingTangerine': 'naranga',
+                'CleverJoey': 'MandaPanda',
+            }
+            display_name = username_aliases.get(message.author.display_name, message.author.display_name)
+            conv_data['participants'].add(display_name)
             
             # Extract potential topics from message content
             topics = self._extract_topics(message.content)
@@ -496,6 +518,12 @@ class ConversationSummarizer:
         for line in lines:
             if ':' in line:
                 author = line.split(':')[0].strip()
+                # Apply username alias
+                username_aliases = {
+                    'TantalizingTangerine': 'naranga',
+                    'CleverJoey': 'MandaPanda',
+                }
+                author = username_aliases.get(author, author)
                 participants.add(author)
                 
                 # Extract potential topics (words longer than 4 chars)
