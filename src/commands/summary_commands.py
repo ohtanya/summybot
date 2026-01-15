@@ -126,63 +126,42 @@ class SummaryCommands(commands.Cog):
             logger.error(f"Error generating private summary: {e}")
             await interaction.followup.send("❌ An error occurred while generating the summary", ephemeral=True)
 
-    @app_commands.command(name='summary', description='Generate a summary for a channel')
+    @app_commands.command(name='summary', description='Generate a summary for a channel (optionally preview/edit before sending)')
     @app_commands.describe(
         channel='Channel to summarize (defaults to current channel)',
-        hours_back='How many hours back to start from (default: 0 = now, e.g., 2 = start 2 hours ago)',
-        hours_duration='How many hours to include from the start point (default: 24, max: 168)',
-        hours='Simple mode: just specify hours back from now (overrides other time settings)'
+        hours='Number of hours to look back (default: 24, max: 168)',
+        preview='If true, show an editable preview with send options'
     )
     async def slash_summary(
         self, 
         interaction: discord.Interaction, 
         channel: discord.TextChannel = None, 
-        hours_back: int = 0,
-        hours_duration: int = 24,
-        hours: int = None
+        hours: int = 24,
+        preview: bool = False
     ):
-        """Generate a summary for a channel and send it directly"""
+        """Generate a summary; preview mode lets you edit/choose destination"""
             
         if channel is None:
             channel = interaction.channel
         
-        # Handle simple mode or validate complex mode
-        if hours is not None:
-            if hours > 168:
-                await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
-                return
-            hours_back = 0
-            hours_duration = hours
-            time_desc = f"last {hours} hours"
-        else:
-            if hours_duration > 168:
-                await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
-                return
-            if hours_back < 0:
-                await interaction.response.send_message("❌ hours_back cannot be negative", ephemeral=True)
-                return
-            
-            if hours_back == 0:
-                time_desc = f"last {hours_duration} hours"
-            else:
-                end_time_desc = f"{hours_back} hours ago"
-                start_time_desc = f"{hours_back + hours_duration} hours ago"
-                time_desc = f"from {start_time_desc} to {end_time_desc}"
+        if hours < 1:
+            await interaction.response.send_message("❌ hours must be at least 1", ephemeral=True)
+            return
+        if hours > 168:
+            await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
+            return
         
+        time_desc = f"last {hours} hours"
         await interaction.response.send_message(f"🔄 Generating summary for {channel.mention} ({time_desc})...", ephemeral=True)
         
         try:
-            # Calculate time range
             current_time = datetime.now(timezone.utc)
-            end_time = current_time - timedelta(hours=hours_back)
-            start_time = current_time - timedelta(hours=hours_back + hours_duration)
+            after_time = current_time - timedelta(hours=hours)
             
             messages = []
-            
             total_messages = 0
             bot_messages = 0
-            # Collect messages in the specified time range
-            async for message in channel.history(before=end_time, after=start_time, limit=1000):
+            async for message in channel.history(after=after_time, limit=1000):
                 total_messages += 1
                 if message.author.bot:
                     bot_messages += 1
@@ -193,17 +172,14 @@ class SummaryCommands(commands.Cog):
                 await interaction.followup.send(f"❌ No messages found in {channel.mention} for {time_desc}", ephemeral=True)
                 return
             
-            # Generate summary
             summary = await self.summarizer.summarize_conversations(messages)
             
-            # Create embed
             embed = discord.Embed(
                 title=f"📊 Summary for #{channel.name}",
                 color=discord.Color.green(),
                 timestamp=datetime.now(timezone.utc)
             )
             
-            # Handle long summaries
             if len(summary) > 1900:
                 summary_parts = summary.split('\n\n')
                 embed.description = summary_parts[0][:1900] + "..."
@@ -220,7 +196,20 @@ class SummaryCommands(commands.Cog):
             
             embed.set_footer(text=f"Requested by {interaction.user.display_name}")
             
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            if preview:
+                preview_embed = discord.Embed(
+                    title=f"📋 Summary Preview for #{channel.name} ({time_desc})",
+                    color=discord.Color.gold(),
+                    timestamp=datetime.now(timezone.utc)
+                )
+                preview_embed.description = embed.description
+                for field in embed.fields:
+                    preview_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+                preview_embed.set_footer(text="Choose where to send this summary:")
+                view = SummaryDestinationView(preview_embed, channel, len(messages), hours, time_desc)
+                await interaction.followup.send(embed=preview_embed, view=view, ephemeral=True)
+            else:
+                await interaction.followup.send(embed=embed, ephemeral=True)
             
         except discord.Forbidden:
             await interaction.followup.send(f"❌ I don't have permission to read messages in {channel.mention}", ephemeral=True)
@@ -316,63 +305,51 @@ class SummaryCommands(commands.Cog):
             logger.error(f"Error in summy: {e}")
             await interaction.followup.send("❌ An error occurred during the summy generation", ephemeral=True)
 
-    @app_commands.command(name='preview_summary', description='Generate a summary and choose where to send it')
+    @app_commands.command(name='summary_override', description='Generate a summary with a custom start/end window')
     @app_commands.describe(
         channel='Channel to summarize (defaults to current channel)',
         hours_back='How many hours back to start from (default: 0 = now, e.g., 2 = start 2 hours ago)',
-        hours_duration='How many hours to include from the start point (default: 24, max: 168)',
-        hours='Simple mode: just specify hours back from now (overrides other time settings)'
+        hours_duration='How many hours to include from the start point (default: 24, max: 168)'
     )
-    async def preview_summary(
+    async def summary_override(
         self, 
         interaction: discord.Interaction, 
         channel: discord.TextChannel = None, 
         hours_back: int = 0,
-        hours_duration: int = 24,
-        hours: int = None
+        hours_duration: int = 24
     ):
-        """Generate a summary preview with options to send it different places"""
+        """Generate a summary for a custom window (advanced)"""
             
         if channel is None:
             channel = interaction.channel
         
-        # Handle simple mode or validate complex mode
-        if hours is not None:
-            if hours > 168:
-                await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
-                return
-            hours_back = 0
-            hours_duration = hours
-            time_desc = f"last {hours} hours"
-        else:
-            if hours_duration > 168:
-                await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
-                return
-            if hours_back < 0:
-                await interaction.response.send_message("❌ hours_back cannot be negative", ephemeral=True)
-                return
-            
-            if hours_back == 0:
-                time_desc = f"last {hours_duration} hours"
-            else:
-                end_time_desc = f"{hours_back} hours ago"
-                start_time_desc = f"{hours_back + hours_duration} hours ago"
-                time_desc = f"from {start_time_desc} to {end_time_desc}"
+        if hours_duration > 168:
+            await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
+            return
+        if hours_back < 0:
+            await interaction.response.send_message("❌ hours_back cannot be negative", ephemeral=True)
+            return
+        if hours_duration < 1:
+            await interaction.response.send_message("❌ hours_duration must be at least 1", ephemeral=True)
+            return
         
-        await interaction.response.send_message(f"🔄 Generating summary preview for {channel.mention} ({time_desc})...", ephemeral=True)
+        if hours_back == 0:
+            time_desc = f"last {hours_duration} hours"
+        else:
+            end_time_desc = f"{hours_back} hours ago"
+            start_time_desc = f"{hours_back + hours_duration} hours ago"
+            time_desc = f"from {start_time_desc} to {end_time_desc}"
+        
+        await interaction.response.send_message(f"🔄 Generating override summary for {channel.mention} ({time_desc})...", ephemeral=True)
         
         try:
-            # Calculate time range
             current_time = datetime.now(timezone.utc)
             end_time = current_time - timedelta(hours=hours_back)
             start_time = current_time - timedelta(hours=hours_back + hours_duration)
             
             messages = []
-            
             total_messages = 0
             bot_messages = 0
-            print(f"DEBUG preview_summary: Collecting messages from {start_time} to {end_time}")
-            # Collect messages in the specified time range
             async for message in channel.history(before=end_time, after=start_time, limit=1000):
                 total_messages += 1
                 if message.author.bot:
@@ -380,25 +357,18 @@ class SummaryCommands(commands.Cog):
                 else:
                     messages.append(message)
             
-            print(f"DEBUG preview_summary: Found {total_messages} total messages, {bot_messages} bot, {len(messages)} user messages")
-            
             if not messages:
                 await interaction.followup.send(f"❌ No messages found in {channel.mention} for {time_desc}", ephemeral=True)
                 return
             
-            # Generate summary
-            print(f"DEBUG preview_summary: Calling summarize_conversations with {len(messages)} messages")
             summary = await self.summarizer.summarize_conversations(messages)
-            print(f"DEBUG preview_summary: Got summary length {len(summary)}")
             
-            # Create preview embed
             embed = discord.Embed(
-                title=f"📋 Summary Preview for #{channel.name} ({time_desc})",
-                color=discord.Color.gold(),
+                title=f"📊 Summary for #{channel.name} ({time_desc})",
+                color=discord.Color.green(),
                 timestamp=datetime.now(timezone.utc)
             )
             
-            # Handle long summaries
             if len(summary) > 1900:
                 summary_parts = summary.split('\n\n')
                 embed.description = summary_parts[0][:1900] + "..."
@@ -413,16 +383,14 @@ class SummaryCommands(commands.Cog):
             else:
                 embed.description = summary
             
-            embed.set_footer(text="Choose where to send this summary:")
+            embed.set_footer(text=f"Requested by {interaction.user.display_name}")
+            await interaction.followup.send(embed=embed, ephemeral=True)
             
-            # Create view with buttons
-            view = SummaryDestinationView(embed, channel, len(messages), hours_duration, time_desc)
-            
-            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
-            
+        except discord.Forbidden:
+            await interaction.followup.send(f"❌ I don't have permission to read messages in {channel.mention}", ephemeral=True)
         except Exception as e:
-            logger.error(f"Error generating summary preview: {e}")
-            await interaction.followup.send("❌ An error occurred while generating the summary preview", ephemeral=True)
+            logger.error(f"Error generating override summary: {e}")
+            await interaction.followup.send("❌ An error occurred while generating the override summary", ephemeral=True)
 
 
 class SummaryDestinationView(discord.ui.View):
