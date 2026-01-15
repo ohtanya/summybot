@@ -129,47 +129,68 @@ class SummaryCommands(commands.Cog):
     @app_commands.command(name='summary', description='Generate a summary for a channel')
     @app_commands.describe(
         channel='Channel to summarize (defaults to current channel)',
-        hours='Number of hours to look back (default: 24, max: 168)'
+        hours_back='How many hours back to start from (default: 0 = now, e.g., 2 = start 2 hours ago)',
+        hours_duration='How many hours to include from the start point (default: 24, max: 168)',
+        simple_hours='Simple mode: just specify hours back from now (overrides other time settings)'
     )
     async def slash_summary(
         self, 
         interaction: discord.Interaction, 
         channel: discord.TextChannel = None, 
-        hours: int = 24
+        hours_back: int = 0,
+        hours_duration: int = 24,
+        simple_hours: int = None
     ):
-        """Generate a manual summary for a channel"""
+        """Generate a summary for a channel and send it directly"""
             
         if channel is None:
             channel = interaction.channel
         
-        if hours > 168:  # Limit to 1 week
-            await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
-            return
+        # Handle simple mode or validate complex mode
+        if simple_hours is not None:
+            if simple_hours > 168:
+                await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
+                return
+            hours_back = 0
+            hours_duration = simple_hours
+            time_desc = f"last {simple_hours} hours"
+        else:
+            if hours_duration > 168:
+                await interaction.response.send_message("❌ Cannot summarize more than 168 hours (1 week)", ephemeral=True)
+                return
+            if hours_back < 0:
+                await interaction.response.send_message("❌ hours_back cannot be negative", ephemeral=True)
+                return
+            
+            if hours_back == 0:
+                time_desc = f"last {hours_duration} hours"
+            else:
+                end_time_desc = f"{hours_back} hours ago"
+                start_time_desc = f"{hours_back + hours_duration} hours ago"
+                time_desc = f"from {start_time_desc} to {end_time_desc}"
         
-        await interaction.response.send_message(f"🔄 Generating summary for {channel.mention} (last {hours} hours)...", ephemeral=True)
+        await interaction.response.send_message(f"🔄 Generating summary for {channel.mention} ({time_desc})...", ephemeral=True)
         
         try:
-            # Collect messages from the specified timeframe - use timezone-aware datetime
+            # Calculate time range
             current_time = datetime.now(timezone.utc)
-            cutoff_time = current_time - timedelta(hours=hours)
-            messages = []
+            end_time = current_time - timedelta(hours=hours_back)
+            start_time = current_time - timedelta(hours=hours_back + hours_duration)
             
-            print(f"DEBUG: Looking for messages after {cutoff_time} in channel {channel.name}")
-            print(f"DEBUG: Current time is {current_time}")
+            messages = []
             
             total_messages = 0
             bot_messages = 0
-            async for message in channel.history(after=cutoff_time, limit=1000):
+            # Collect messages in the specified time range
+            async for message in channel.history(before=end_time, after=start_time, limit=1000):
                 total_messages += 1
                 if message.author.bot:
                     bot_messages += 1
                 else:
                     messages.append(message)
             
-            print(f"DEBUG: Found {total_messages} total messages, {bot_messages} bot messages, {len(messages)} user messages")
-            
             if not messages:
-                await interaction.followup.send(f"❌ No messages found in {channel.mention} for the last {hours} hours", ephemeral=True)
+                await interaction.followup.send(f"❌ No messages found in {channel.mention} for {time_desc}", ephemeral=True)
                 return
             
             # Generate summary
@@ -177,20 +198,18 @@ class SummaryCommands(commands.Cog):
             
             # Create embed
             embed = discord.Embed(
-                title=f"📊 Summary for {channel.name}",
+                title=f"📊 Summary for #{channel.name}",
                 color=discord.Color.green(),
                 timestamp=datetime.now(timezone.utc)
             )
             
-            # Check if summary is too long for embed description (2048 char limit)
-            if len(summary) > 1900:  # Leave some room for formatting
-                # Split long summaries
+            # Handle long summaries
+            if len(summary) > 1900:
                 summary_parts = summary.split('\n\n')
                 embed.description = summary_parts[0][:1900] + "..."
                 
-                # Add remaining parts as fields if possible
                 for i, part in enumerate(summary_parts[1:], 1):
-                    if len(embed.fields) < 10 and len(part) < 1024:  # Field value limit
+                    if len(embed.fields) < 10 and len(part) < 1024:
                         embed.add_field(
                             name=f"📝 Part {i+1}",
                             value=part,
@@ -200,14 +219,8 @@ class SummaryCommands(commands.Cog):
                 embed.description = summary
             
             embed.add_field(
-                name="Timeframe",
-                value=f"Last {hours} hours",
-                inline=True
-            )
-            
-            embed.add_field(
-                name="Messages Analyzed",
-                value=str(len(messages)),
+                name="📊 Stats",
+                value=f"**Messages:** {len(messages)}\n**Timeframe:** {time_desc}",
                 inline=True
             )
             

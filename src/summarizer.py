@@ -357,10 +357,7 @@ class ConversationSummarizer:
         formatted_summary = self._format_usernames_with_colors(cleaned_summary, participants)
         
         # Create a more readable summary format
-        final_summary = f"""**📍 #{channel_name}**
-� **Messages:** {len(messages)}
-
-**💬 Summary:**
+        final_summary = f"""** Summary:**
 {formatted_summary}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━""".strip()
