@@ -174,17 +174,19 @@ class ConversationSummarizer:
                     if name_to_format in formatted_participants:
                         continue
                         
-                    # Pattern 1: **name** -> emoji **name**
+                    # Pattern 1: **name** -> emoji **name** (case-insensitive)
                     bold_pattern = r'\*\*' + re.escape(name_to_format) + r'\*\*'
-                    if re.search(bold_pattern, formatted_text):
-                        formatted_text = re.sub(bold_pattern, f"{emoji} **{name_to_format}**", formatted_text)
+                    if re.search(bold_pattern, formatted_text, re.IGNORECASE):
+                        formatted_text = re.sub(bold_pattern, f"{emoji} **{name_to_format}**", formatted_text, flags=re.IGNORECASE)
                         formatted_participants.add(name_to_format)
                         formatted_any = True
-                    # Pattern 2: plain name -> emoji **name**
-                    elif name_to_format in formatted_text:
+                    # Pattern 2: plain name -> emoji **name** (case-insensitive with word boundaries)
+                    elif name_to_format in formatted_text or name_to_format.lower() in formatted_text.lower():
                         plain_pattern = r'\b' + re.escape(name_to_format) + r'\b'
-                        if re.search(plain_pattern, formatted_text):
-                            formatted_text = re.sub(plain_pattern, f"{emoji} **{name_to_format}**", formatted_text)
+                        matches = re.search(plain_pattern, formatted_text, re.IGNORECASE)
+                        if matches:
+                            # Replace the actual matched text (preserving original case)
+                            formatted_text = re.sub(plain_pattern, f"{emoji} **{matches.group()}**", formatted_text, flags=re.IGNORECASE)
                             formatted_participants.add(name_to_format)
                             formatted_any = True
                 
