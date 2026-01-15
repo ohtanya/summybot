@@ -368,7 +368,9 @@ class ConversationSummarizer:
         """Convert Discord messages to text suitable for summarization"""
         conversation_lines = []
         
-        for message in messages:
+        print(f"DEBUG _prepare_conversation_text: Processing {len(messages)} messages")
+        for idx, message in enumerate(messages):
+            print(f"DEBUG   [{idx}] {message.author.display_name}: {message.content[:50]}")
             # Clean message content
             content = message.content
             
@@ -393,6 +395,7 @@ class ConversationSummarizer:
     
     async def _generate_summary(self, text: str, custom_prompt: str = None) -> Optional[str]:
         """Generate summary using available method"""
+        print(f"DEBUG _generate_summary: Input text:\n{text}\n---END INPUT---")
         print(f"DEBUG _generate_summary: OpenAI available={bool(self.openai_client)}, Local summarizer={bool(self.local_summarizer)}, text length={len(text)}")
         # Try OpenAI first if available
         if self.openai_client:
