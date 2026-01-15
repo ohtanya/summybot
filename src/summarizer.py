@@ -33,6 +33,23 @@ class ConversationSummarizer:
         self.openai_client = None
         self.local_summarizer = None
         
+        # User gender mapping for pronouns (female, male, neutral)
+        self.user_genders = {
+            'TantalizingTangerine': 'female',
+            'naranga': 'female',
+            'annbland': 'female',
+            'HelpfulKitten': 'female',
+            'Emma': 'female',
+            'Theris Valayrin': 'neutral',
+            'doobiegirl': 'female',
+            'CleverJoey': 'female',
+            'MandaPanda': 'female',
+            'liliesanddaisies': 'female',
+            'myxdvz': 'neutral',
+            'bee!': 'neutral',
+            'bluecupgreenspoon': 'neutral',
+        }
+        
         # Initialize OpenAI if available and configured
         if OPENAI_AVAILABLE:
             api_key = os.getenv('OPENAI_API_KEY')
@@ -428,6 +445,17 @@ class ConversationSummarizer:
     async def _summarize_with_openai(self, text: str, custom_prompt: str = None) -> str:
         """Summarize using OpenAI API"""
         
+        # Build gender reference for known users
+        gender_ref = "GENDER REFERENCE (use correct pronouns based on this):\n"
+        for username, gender in self.user_genders.items():
+            if gender == 'female':
+                pronouns = "she/her"
+            elif gender == 'male':
+                pronouns = "he/him"
+            else:
+                pronouns = "they/them"
+            gender_ref += f"- {username}: {pronouns}\n"
+        
         # Use completely different approach for custom questions
         if custom_prompt:
             prompt = f"""
@@ -436,6 +464,8 @@ class ConversationSummarizer:
             Look through the conversation and provide a direct, concise answer. If the answer isn't in the conversation, say so. Focus ONLY on information that directly relates to the question.
             
             Keep your response to 100-150 words maximum. Be specific and include relevant usernames when mentioning who said what.
+            
+            {gender_ref}
             
             IMPORTANT: If you see "[SPOILER CONTENT]", mention spoilers were discussed but don't reveal content.
             
@@ -447,22 +477,22 @@ class ConversationSummarizer:
             prompt = f"""
             Create a casual, friendly summary of this Discord conversation using bullet points. You're writing for someone who missed the conversations and wants to know what their friends were talking about. Make each bullet point detailed enough to give good context about what happened.
 
+            {gender_ref}
+            
             ABSOLUTELY CRITICAL - NO EXCEPTIONS: You MUST use specific usernames from the conversation. I will reject any summary that uses vague terms.
+
+            PRONOUN RULES: Use the provided gender reference above. For users in the gender reference, use their correct pronouns naturally (she/he/they). For users NOT in the gender reference (unknown gender), use they/them pronouns or repeat their username instead of guessing.
 
             FORBIDDEN WORDS/PHRASES - DO NOT USE:
             - "someone" 
             - "a member"
             - "a user" 
             - "the group"
-            - "they" / "them" / "their" (use username instead)
-            - "he" / "him" / "his" (use username instead)
-            - "she" / "her" / "hers" (use username instead)
             - "one person"
             - "another user"
             - "others"
-            - ANY pronouns - always use the actual username
 
-            REQUIRED: If John talked to Mary about books, write "John talked to Mary about books" NOT "someone talked to another person about books". If you need to refer back to John, write "John said X, John then did Y" NOT "John said X, he then did Y"
+            REQUIRED: Use natural language with pronouns for users in the gender reference. For example: "Emma said she enjoyed the book" or "Theris shared they thought it was interesting". For unknown users, write "John said X, John then did Y" or "John said X, they then did Y" instead of guessing pronouns.
             
             CRITICAL MESSAGE ORDER: Messages are presented in chronological order (oldest to newest). When attributing actions, pay close attention to WHO said/did something FIRST and WHO responded AFTER. For example:
             - If Alice mentions X, then Bob replies to Alice about X, Bob is RESPONDING to Alice's mention.
