@@ -218,12 +218,6 @@ class SummaryCommands(commands.Cog):
             else:
                 embed.description = summary
             
-            embed.add_field(
-                name="📊 Stats",
-                value=f"**Messages:** {len(messages)}\n**Timeframe:** {time_desc}",
-                inline=True
-            )
-            
             embed.set_footer(text=f"Requested by {interaction.user.display_name}")
             
             await interaction.followup.send(embed=embed, ephemeral=True)
@@ -419,12 +413,6 @@ class SummaryCommands(commands.Cog):
             else:
                 embed.description = summary
             
-            embed.add_field(
-                name="📊 Stats",
-                value=f"**Messages:** {len(messages)}\n**Timeframe:** {time_desc}",
-                inline=True
-            )
-            
             embed.set_footer(text="Choose where to send this summary:")
             
             # Create view with buttons
@@ -482,13 +470,6 @@ class SummaryDestinationView(discord.ui.View):
             self.summary_embed.clear_fields()
             for field in fields_to_keep:
                 self.summary_embed.add_field(name=field.name, value=field.value, inline=field.inline)
-        
-        # Re-add stats field
-        self.summary_embed.add_field(
-            name="📊 Stats",
-            value=f"**Messages:** {self.message_count}\n**Timeframe:** {self.time_desc}",
-            inline=True
-        )
     
     @discord.ui.button(label='Edit Summary', style=discord.ButtonStyle.secondary, emoji='✏️')
     async def edit_summary(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -511,20 +492,8 @@ class SummaryDestinationView(discord.ui.View):
             
             # Copy any fields from the original embed
             for field in self.summary_embed.fields:
-                if field.name != "📊 Stats":  # Skip the stats field, we'll recreate it
+                if field.name != "📊 Stats":  # Skip the stats field
                     public_embed.add_field(name=field.name, value=field.value, inline=field.inline)
-            
-            public_embed.add_field(
-                name="Timeframe",
-                value=self.time_desc,
-                inline=True
-            )
-            
-            public_embed.add_field(
-                name="Messages Analyzed",
-                value=str(self.message_count),
-                inline=True
-            )
             
             public_embed.set_footer(text=f"Requested by {interaction.user.display_name}")
             
@@ -562,18 +531,6 @@ class SummaryDestinationView(discord.ui.View):
             dm_embed.add_field(
                 name="📍 Server",
                 value=interaction.guild.name,
-                inline=True
-            )
-            
-            dm_embed.add_field(
-                name="⏰ Timeframe", 
-                value=self.time_desc,
-                inline=True
-            )
-            
-            dm_embed.add_field(
-                name="📈 Messages Analyzed",
-                value=f"{self.message_count} messages",
                 inline=True
             )
             
