@@ -10,21 +10,21 @@ import discord
 from datetime import datetime, timedelta
 import logging
 
-# User-editable gender map. Add entries here; any user not listed defaults to they/them.
+# User-editable gender map. Use M/F/N (M=he/him, F=she/her, N=they/them). Unknown users default to they/them.
 USER_GENDERS: Dict[str, str] = {
-    "TantalizingTangerine": "female",
-    "naranga": "female",
-    "annbland": "female",
-    "HelpfulKitten": "female",
-    "Emma": "female",
-    "Theris Valayrin": "neutral",
-    "doobiegirl": "female",
-    "CleverJoey": "female",
-    "MandaPanda": "female",
-    "liliesanddaisies": "female",
-    "myxdvz": "neutral",
-    "bee!": "neutral",
-    "bluecupgreenspoon": "neutral",
+    "TantalizingTangerine": "F",
+    "naranga": "F",
+    "annbland": "F",
+    "HelpfulKitten": "F",
+    "Emma": "F",
+    "Theris Valayrin": "M",
+    "doobiegirl": "F",
+    "CleverJoey": "F",
+    "MandaPanda": "F",
+    "liliesanddaisies": "F",
+    "myxdvz": "F",
+    "bee!": "F",
+    "bluecupgreenspoon": "F",
 }
 
 # Optional imports for different summarization methods
@@ -51,7 +51,7 @@ class ConversationSummarizer:
         self.local_summarizer = None
         
         # Editable gender mapping. Unknown users default to they/them.
-        self.user_genders = USER_GENDERS.copy()
+        self.user_genders = {name: self._normalize_gender(gender) for name, gender in USER_GENDERS.items()}
         
         # Initialize OpenAI if available and configured
         if OPENAI_AVAILABLE:
@@ -215,6 +215,17 @@ class ConversationSummarizer:
                     formatted_participants.add(participant)
         
         return formatted_text
+
+    def _normalize_gender(self, gender: str) -> str:
+        """Normalize user-specified gender to M/F/N codes."""
+        if not gender:
+            return "N"
+        code = str(gender).strip().upper()
+        if code.startswith("F"):
+            return "F"
+        if code.startswith("M"):
+            return "M"
+        return "N"
     
     def _clean_summary_text(self, summary: str, participants: List[str]) -> str:
         """Clean up summary text to fix common AI formatting issues"""
@@ -449,14 +460,13 @@ class ConversationSummarizer:
         """Summarize using OpenAI API"""
         
         # Build gender reference for known users
-        gender_ref = "GENDER REFERENCE (use correct pronouns based on this):\n"
+        gender_ref = "GENDER REFERENCE (M=he/him, F=she/her, N=they/them):\n"
         for username, gender in self.user_genders.items():
-            if gender == 'female':
-                pronouns = "she/her"
-            elif gender == 'male':
-                pronouns = "he/him"
-            else:
-                pronouns = "they/them"
+            pronouns = {
+                "F": "she/her",
+                "M": "he/him",
+                "N": "they/them",
+            }.get(gender, "they/them")
             gender_ref += f"- {username}: {pronouns}\n"
         gender_ref += "- Unknown/others: they/them (default)\n"
         
@@ -485,7 +495,7 @@ class ConversationSummarizer:
             
             ABSOLUTELY CRITICAL - NO EXCEPTIONS: You MUST use specific usernames from the conversation. I will reject any summary that uses vague terms.
 
-            PRONOUN RULES: Use the provided gender reference above. For users in the gender reference, use their correct pronouns naturally (she/he/they). For users NOT in the gender reference (unknown gender), use they/them pronouns or repeat their username instead of guessing.
+            PRONOUN RULES: Use the provided gender reference above (M=he/him, F=she/her, N=they/them). For users in the gender reference, use their correct pronouns naturally. For users NOT in the gender reference (unknown gender), use they/them pronouns or repeat their username instead of guessing.
 
             FORBIDDEN WORDS/PHRASES - DO NOT USE:
             - "someone" 
