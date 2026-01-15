@@ -223,6 +223,10 @@ class ConversationSummarizer:
     
     async def summarize_conversations(self, messages: List[discord.Message], custom_prompt: str = None) -> str:
         """Generate a summary from a list of Discord messages"""
+        logger.info(f"Starting summarize_conversations with {len(messages)} messages")
+        if not messages:
+            logger.warning("No messages provided to summarize_conversations")
+            return "No messages to summarize."
         if not messages:
             return "No conversations found for today."
         
@@ -243,6 +247,7 @@ class ConversationSummarizer:
                 continue
         
         if not summaries:
+            logger.warning(f"No summaries generated. Conversations found: {len(conversations)}")
             return "No significant conversations found for today."
         
         # Combine all channel summaries
@@ -307,19 +312,24 @@ class ConversationSummarizer:
         """Summarize conversations for a specific channel"""
         messages = conv_data['messages']
         
-        if len(messages) < 3:  # Skip channels with very few messages
+        if len(messages) < 1:  # Need at least 1 message
+            logger.debug(f"Skipping #{channel_name}: {len(messages)} messages (need at least 1)")
             return None
         
         # Prepare text for summarization
         conversation_text = self._prepare_conversation_text(messages)
         
-        if len(conversation_text) < 100:  # Skip very short conversations
+        if len(conversation_text) < 20:  # Skip very short conversations (was 100)
+            logger.debug(f"Skipping #{channel_name}: conversation too short ({len(conversation_text)} chars, need at least 20)")
             return None
+        
+        logger.debug(f"Summarizing #{channel_name}: {len(messages)} messages, {len(conversation_text)} chars")
         
         # Generate summary using available method
         summary = await self._generate_summary(conversation_text, custom_prompt)
         
         if not summary:
+            logger.debug(f"Failed to generate summary for #{channel_name}")
             return None
         
         # Format the channel summary with better readability

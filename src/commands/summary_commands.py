@@ -364,6 +364,7 @@ class SummaryCommands(commands.Cog):
             
             total_messages = 0
             bot_messages = 0
+            print(f"DEBUG preview_summary: Collecting messages from {start_time} to {end_time}")
             # Collect messages in the specified time range
             async for message in channel.history(before=end_time, after=start_time, limit=1000):
                 total_messages += 1
@@ -372,16 +373,20 @@ class SummaryCommands(commands.Cog):
                 else:
                     messages.append(message)
             
+            print(f"DEBUG preview_summary: Found {total_messages} total messages, {bot_messages} bot, {len(messages)} user messages")
+            
             if not messages:
                 await interaction.followup.send(f"❌ No messages found in {channel.mention} for {time_desc}", ephemeral=True)
                 return
             
             # Generate summary
+            print(f"DEBUG preview_summary: Calling summarize_conversations with {len(messages)} messages")
             summary = await self.summarizer.summarize_conversations(messages)
+            print(f"DEBUG preview_summary: Got summary length {len(summary)}")
             
             # Create preview embed
             embed = discord.Embed(
-                title=f"📋 Summary Preview for #{channel.name}",
+                title=f"📋 Summary Preview for #{channel.name} ({time_desc})",
                 color=discord.Color.gold(),
                 timestamp=datetime.now(timezone.utc)
             )
