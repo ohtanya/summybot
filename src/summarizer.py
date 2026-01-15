@@ -10,6 +10,23 @@ import discord
 from datetime import datetime, timedelta
 import logging
 
+# User-editable gender map. Add entries here; any user not listed defaults to they/them.
+USER_GENDERS: Dict[str, str] = {
+    "TantalizingTangerine": "female",
+    "naranga": "female",
+    "annbland": "female",
+    "HelpfulKitten": "female",
+    "Emma": "female",
+    "Theris Valayrin": "neutral",
+    "doobiegirl": "female",
+    "CleverJoey": "female",
+    "MandaPanda": "female",
+    "liliesanddaisies": "female",
+    "myxdvz": "neutral",
+    "bee!": "neutral",
+    "bluecupgreenspoon": "neutral",
+}
+
 # Optional imports for different summarization methods
 try:
     import openai
@@ -33,22 +50,8 @@ class ConversationSummarizer:
         self.openai_client = None
         self.local_summarizer = None
         
-        # User gender mapping for pronouns (female, male, neutral)
-        self.user_genders = {
-            'TantalizingTangerine': 'female',
-            'naranga': 'female',
-            'annbland': 'female',
-            'HelpfulKitten': 'female',
-            'Emma': 'female',
-            'Theris Valayrin': 'neutral',
-            'doobiegirl': 'female',
-            'CleverJoey': 'female',
-            'MandaPanda': 'female',
-            'liliesanddaisies': 'female',
-            'myxdvz': 'neutral',
-            'bee!': 'neutral',
-            'bluecupgreenspoon': 'neutral',
-        }
+        # Editable gender mapping. Unknown users default to they/them.
+        self.user_genders = USER_GENDERS.copy()
         
         # Initialize OpenAI if available and configured
         if OPENAI_AVAILABLE:
@@ -455,6 +458,7 @@ class ConversationSummarizer:
             else:
                 pronouns = "they/them"
             gender_ref += f"- {username}: {pronouns}\n"
+        gender_ref += "- Unknown/others: they/them (default)\n"
         
         # Use completely different approach for custom questions
         if custom_prompt:
@@ -499,7 +503,7 @@ class ConversationSummarizer:
             - If Alice shares a link, then Bob says "that didn't work", Bob is reacting to ALICE's link, not the other way around.
             - The LAST person to mention something is usually the one providing the correction or alternative.
             
-            USERNAME FORMAT: Use plain usernames without @ symbols. Write "Emma said" NOT "@Emma said". ALWAYS repeat the username instead of using pronouns like "they" or "he/she" - this ensures accuracy and respects everyone's identity.
+            USERNAME FORMAT: Use plain usernames without @ symbols. Write "Emma said" NOT "@Emma said". Use pronouns only when provided in the gender reference; otherwise use they/them or repeat the username.
             
             CAPITALIZATION: Keep usernames EXACTLY as they appear in the conversation. Use lowercase usernames. Do NOT use ALL CAPS. If the conversation shows "annbland" write "annbland", NOT "ANNBLAND" or "Annbland". If it shows "liliesanddaisies" write "liliesanddaisies", NOT "LILIESANDDAISIES".
 
