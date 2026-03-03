@@ -519,16 +519,13 @@ class ConversationSummarizer:
 
             FORMAT: Use bullet points (•) for easy reading. Make each bullet point 1-2 sentences with enough detail to understand the context. Structure like:
 
+            **Summary:**
             • [Detailed summary of main topics, discussions, or activities - ALWAYS name who was involved and what they specifically talked about]
             • [Specific reactions, decisions, or responses people had - ALWAYS mention who reacted and explain the context]
-            • [Notable quotes or memorable moments - ALWAYS say who said what and provide enough context to understand why it was interesting]
-
-            **Notable Moments:**
-            • [Detailed explanation of any debates, discussions, or interesting conversations - ALWAYS name who participated and what the topic was]
-            • [Funny or noteworthy moments with enough context - ALWAYS mention who was involved in what happened]
 
             **Key Highlights:**
-            • [Most important or interesting moments with full context - ALWAYS name the people involved and explain why it was significant]
+            • [Most important, interesting, or memorable moments with full context - ALWAYS name the people involved, what was discussed, and why it mattered]
+            • [Include debates, funny moments, important decisions, or noteworthy quotes - ALWAYS mention who was involved and provide enough context]
 
             Keep it casual and friendly, focus on what actually happened, and aim for 200-250 words total. 
 
