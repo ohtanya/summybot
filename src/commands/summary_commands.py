@@ -209,7 +209,10 @@ class SummaryCommands(commands.Cog):
                 view = SummaryDestinationView(preview_embed, channel, len(messages), hours, time_desc)
                 await interaction.followup.send(embed=preview_embed, view=view, ephemeral=True)
             else:
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                # Post directly to the channel when preview is False
+                embed.set_footer(text=f"Requested by {interaction.user.display_name}")
+                await channel.send(embed=embed)
+                await interaction.followup.send(f"✅ Summary posted to {channel.mention}!", ephemeral=True)
             
         except discord.Forbidden:
             await interaction.followup.send(f"❌ I don't have permission to read messages in {channel.mention}", ephemeral=True)
