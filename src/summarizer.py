@@ -115,9 +115,11 @@ class ConversationSummarizer:
             'MandaPanda': '🐼',
             'liliesanddaisies': '🌹',
             '🌹 liliesanddaisies 🌻🌼': '🌹',  # Discord display name with decorations
+            '🌹 liliesanddaisies': '🌹',  # Discord display name with decorations
             'myxdvz': '🐨',
             'bee!': '🐝',
             'bluecupgreenspoon': '✨',
+            'PoTeaTo': '🥔'
         }
         
         # Apply aliases to text by replacing original names with aliases
